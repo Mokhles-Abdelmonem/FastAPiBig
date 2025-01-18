@@ -266,8 +266,4 @@ cython_debug/
 /docker/.redis_data/
 /docker/.redis_insight_data/
 /docker/.rabbitmq_data/
-message.txt
 up-docker.sh
-players_data.json
-player.json
-script.py
