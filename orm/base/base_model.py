@@ -1,8 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, select
 from sqlalchemy.orm import as_declarative , declared_attr, declarative_base
 import contextlib
-from typing import AsyncIterator, Optional, Type
+from typing import AsyncIterator, Optional, Type, Any
+
+from sqlalchemy.sql.functions import count
 
 DATABASE_URL = 'postgresql+asyncpg://SG_USER:SG_PASS@localhost:5433/SG_DB'
 DECLARATIVE_BASE = declarative_base()
@@ -51,43 +53,48 @@ class ORM:
     async def all(self):
         """Retrieve all records."""
         async for db_session in self._class._get_session():
-            query = self._class.__table__.select()
+            query = select(self._class)
             result = await db_session.execute(query)
             return result.scalars().all()
 
     async def filter(self, **filters):
         """Filter records by criteria."""
         async for db_session in self._class._get_session():
-            query = self._class.__table__.select()
-            for column, value in filters.items():
-                if hasattr(self._class, column):
-                    query = query.where(getattr(self._class, column) == value)
-                else:
-                    raise AttributeError(f"{self._class.__name__} has no attribute '{column}'")
+            query = select(self._class).where(*self._filter_conditions(filters))
             result = await db_session.execute(query)
             return result.scalars().all()
 
     async def first(self, **filters):
         """Retrieve the first record matching the criteria."""
         async for db_session in self._class._get_session():
-            query = self._class.__table__.select()
-            for column, value in filters.items():
-                if hasattr(self._class, column):
-                    query = query.where(getattr(self._class, column) == value)
-                else:
-                    raise AttributeError(f"{self._class.__name__} has no attribute '{column}'")
+            query = select(self._class).where(*self._filter_conditions(filters))
             result = await db_session.execute(query)
             return result.scalars().first()
 
     async def count(self):
         """Count all records."""
         async for db_session in self._class._get_session():
-            result = await db_session.execute(self._class.__table__.count())
+            result = await db_session.execute(select(count()).select_from(self._class))
             return result.scalar()
 
     async def exists(self, **filters):
         """Check if any record matches the criteria."""
         return await self.first(**filters) is not None
+
+    async def execute_query(self, query):
+        async for db_session in self._class._get_session():
+            result = await db_session.execute(query)
+            return result
+
+    def _filter_conditions(self, filtered_fields: dict[str, Any] = None):
+        filter_conditions = []
+        fields = filtered_fields or {}
+        for attr, value in fields.items():
+            if hasattr(self._class, attr):
+                filter_conditions.append(getattr(self._class, attr) == value)
+            else:
+                raise AttributeError(f"Model {self._class.__name__} does not have '{attr}' attribute")
+        return filter_conditions
 
 
 @as_declarative()
@@ -121,9 +128,12 @@ class BaseORM:
         """Return an ORM instance for the class."""
         return ORM(_class=cls)
 
-
-
-
+    async def save(self):
+        async for db_session in self._get_session():
+            merged_instance = await db_session.merge(self)  # Ensures no duplicate sessions
+            await db_session.commit()
+            await db_session.refresh(merged_instance)
+            return merged_instance  # Return the updated instance
 
 
 # Define your models by inheriting from Base
@@ -180,15 +190,28 @@ db_manager = DataBaseSessionManager(DATABASE_URL)
 BaseORM.initialize(db_manager)
 
 if __name__ == "__main__":
-    test_num = 7
+    test_num = 15
     import asyncio
 
     async def main():
         await db_manager.create_all_tables()
         #
-        # # Create multiple users
-        # await User.objects.create(name="John Doe", email=f"john_{test_num}.doe@example.com")
-        # await User.objects.create(name="Jane Doe", email=f"jane_{test_num}.doe@example.com")
+        # Create multiple users
+        await User.objects.create(name="John Doe", email=f"john_{test_num}.doe@example.com")
+        await User.objects.create(name="Jane Doe", email=f"jane_{test_num}.doe@example.com")
+
+
+        # Update a user
+        user = await User.objects.get(id=33)
+        if user:
+            user.name = "John Doe Updated"
+            await user.save()
+
+        # Delete a user
+        await User.objects.delete(id=33)
+
+
+
 
         # Get all users
         users = await User.objects.all()
