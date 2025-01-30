@@ -6,9 +6,7 @@ def main():
     try:
         from management.commands_management import ManageCommands
     except ImportError as e:
-        raise ImportError(
-            "Error: commands_management.py not found. "
-        )
+        raise ImportError("Error: commands_management.py not found. ")
     ManageCommands(argv=sys.argv).execute()
 
 

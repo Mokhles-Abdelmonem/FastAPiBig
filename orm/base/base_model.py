@@ -1,12 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy import Column, Integer, String, select
-from sqlalchemy.orm import as_declarative , declared_attr, declarative_base
+from sqlalchemy.orm import as_declarative, declared_attr, declarative_base
 import contextlib
 from typing import AsyncIterator, Optional, Type, Any
 
 from sqlalchemy.sql.functions import count
 
-DATABASE_URL = 'postgresql+asyncpg://SG_USER:SG_PASS@localhost:5433/SG_DB'
+DATABASE_URL = "postgresql+asyncpg://SG_USER:SG_PASS@localhost:5433/SG_DB"
 DECLARATIVE_BASE = declarative_base()
 
 
@@ -93,7 +93,9 @@ class ORM:
             if hasattr(self._class, attr):
                 filter_conditions.append(getattr(self._class, attr) == value)
             else:
-                raise AttributeError(f"Model {self._class.__name__} does not have '{attr}' attribute")
+                raise AttributeError(
+                    f"Model {self._class.__name__} does not have '{attr}' attribute"
+                )
         return filter_conditions
 
 
@@ -106,7 +108,9 @@ class BaseORM:
     def __tablename__(cls) -> str:
         return cls.__name__.lower()
 
-    _db_manager: Optional["DataBaseSessionManager"] = None  # Private class attribute for session management
+    _db_manager: Optional["DataBaseSessionManager"] = (
+        None  # Private class attribute for session management
+    )
     _orm_instance: Optional[ORM] = None  # Cache the ORM instance
 
     @classmethod
@@ -130,7 +134,9 @@ class BaseORM:
 
     async def save(self):
         async for db_session in self._get_session():
-            merged_instance = await db_session.merge(self)  # Ensures no duplicate sessions
+            merged_instance = await db_session.merge(
+                self
+            )  # Ensures no duplicate sessions
             await db_session.commit()
             await db_session.refresh(merged_instance)
             return merged_instance  # Return the updated instance
@@ -142,6 +148,7 @@ class User(BaseORM):
     name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
 
+
 class DataBaseSessionManager:
     def __init__(self, database_url: str):
         """Initialize the database engine and sessionmaker with connection pooling."""
@@ -150,7 +157,7 @@ class DataBaseSessionManager:
             pool_size=5,  # Adjust pool size as needed
             max_overflow=2,  # Adjust overflow size as needed
             pool_timeout=10,
-            pool_recycle=600
+            pool_recycle=600,
         )
         self._sessionmaker = async_sessionmaker(
             bind=self._engine, expire_on_commit=False, class_=AsyncSession
@@ -185,6 +192,7 @@ class DataBaseSessionManager:
                 await session.rollback()
                 raise e
 
+
 # Create tables (if not already created)
 db_manager = DataBaseSessionManager(DATABASE_URL)
 BaseORM.initialize(db_manager)
@@ -197,9 +205,12 @@ if __name__ == "__main__":
         await db_manager.create_all_tables()
         #
         # Create multiple users
-        await User.objects.create(name="John Doe", email=f"john_{test_num}.doe@example.com")
-        await User.objects.create(name="Jane Doe", email=f"jane_{test_num}.doe@example.com")
-
+        await User.objects.create(
+            name="John Doe", email=f"john_{test_num}.doe@example.com"
+        )
+        await User.objects.create(
+            name="Jane Doe", email=f"jane_{test_num}.doe@example.com"
+        )
 
         # Update a user
         user = await User.objects.get(id=33)
@@ -209,9 +220,6 @@ if __name__ == "__main__":
 
         # Delete a user
         await User.objects.delete(id=33)
-
-
-
 
         # Get all users
         users = await User.objects.all()

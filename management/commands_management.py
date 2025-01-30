@@ -82,7 +82,9 @@ def start_server(host="127.0.0.1", port=8000):
                 try:
                     module_name = f"app.routes.{route_file[:-3]}"
                     routes_module = __import__(module_name, fromlist=["router"])
-                    app.include_router(routes_module.router, prefix=f"/{route_file[:-3]}")
+                    app.include_router(
+                        routes_module.router, prefix=f"/{route_file[:-3]}"
+                    )
                 except (ModuleNotFoundError, AttributeError):
                     pass
 
@@ -132,7 +134,9 @@ class ManageCommands:
         print("Available commands:")
         print("  startapp <app_name> [--tb]   Create a new FastAPI app/module.")
         print("    --tb: Create type-based structure (default is feature-based)")
-        print("  runserver [host] [port]      Start the FastAPI server (default: 127.0.0.1:8000).")
+        print(
+            "  runserver [host] [port]      Start the FastAPI server (default: 127.0.0.1:8000)."
+        )
 
 
 def main():

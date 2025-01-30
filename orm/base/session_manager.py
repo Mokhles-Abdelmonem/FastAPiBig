@@ -1,5 +1,11 @@
 from typing import Optional
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, AsyncConnection, AsyncEngine, async_sessionmaker
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    create_async_engine,
+    AsyncConnection,
+    AsyncEngine,
+    async_sessionmaker,
+)
 import contextlib
 from typing import AsyncIterator
 from sqlalchemy.orm.decl_api import DeclarativeMeta
@@ -24,7 +30,7 @@ class DataBaseSessionManager:
             pool_size=self.pool_size,
             max_overflow=self.max_overflow,
             pool_timeout=self.pool_timeout,
-            pool_recycle=self.pool_recycle
+            pool_recycle=self.pool_recycle,
         )
 
         # Create the async sessionmaker
@@ -32,7 +38,7 @@ class DataBaseSessionManager:
             bind=self._engine,
             expire_on_commit=False,
             class_=AsyncSession,
-            autocommit=False
+            autocommit=False,
         )
 
     async def close(self):
