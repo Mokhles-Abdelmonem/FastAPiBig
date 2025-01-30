@@ -1,12 +1,12 @@
-from typing import List
+from typing import List, Type
 
 from pydantic import BaseModel
 
 
 class APIView:
-    schema_in: BaseModel = None
-    schema_out: BaseModel | List[BaseModel] = None
-    model: BaseModel = None
+    schema_in: Type[BaseModel] = None
+    schema_out: Type[BaseModel] | List[Type[BaseModel]] = None
+    model: Type[BaseModel] = None
     methods: List[str] = [
         "create",
         "get",
@@ -21,14 +21,19 @@ class APIView:
 
 
     async def create(self, **kwargs):
-        return
+        return await self.model.objects.create(**kwargs)
+
     async def get(self, id):
-        return
+        return self.model.objects.get(id=id)
+
     async def update(self, id, **kwargs):
         return
+
     async def delete(self, id):
         return
+
     async def list(self):
         return
+
     async def partial_update(self, id, **kwargs):
         return
