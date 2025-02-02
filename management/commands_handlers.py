@@ -54,38 +54,14 @@ def create_feature_based_structure(app_name):
     print(f"Feature-based app '{app_name}' created successfully!")
 
 
-def start_server(host="127.0.0.1", port=8000):
+def start_server(
+        host: str = "127.0.0.1",
+        port: int = 8000,
+        reload: bool = True,
+        workers: int = 1
+):
     """Starts the FastAPI server."""
-    app = FastAPI()
-
-    # Dynamically include routes
-    apps_dir = os.path.join(os.getcwd(), "app")
-
-    # For feature-based structure
-    if os.path.exists(apps_dir):
-        for app_name in os.listdir(apps_dir):
-            app_path = os.path.join(apps_dir, app_name)
-            if os.path.isdir(app_path):
-                try:
-                    module_name = f"app.{app_name}.routes"
-                    routes_module = __import__(module_name, fromlist=["router"])
-                    app.include_router(routes_module.router, prefix=f"/{app_name}")
-                except (ModuleNotFoundError, AttributeError):
-                    pass
-
-    # For type-based structure
-    routes_dir = os.path.join(apps_dir, "routes")
-    if os.path.exists(routes_dir):
-        for route_file in os.listdir(routes_dir):
-            if route_file.endswith(".py") and route_file != "__init__.py":
-                try:
-                    module_name = f"app.routes.{route_file[:-3]}"
-                    routes_module = __import__(module_name, fromlist=["router"])
-                    app.include_router(routes_module.router, prefix=f"/{route_file[:-3]}")
-                except (ModuleNotFoundError, AttributeError):
-                    pass
-
-    uvicorn.run(app, host=host, port=port)
+    uvicorn.run("management.fastapi_app:app", host=host, port=port, reload=reload, workers=workers)
 
 
 
@@ -110,6 +86,7 @@ def runserver_handler(argv):
         host = argv[2]
     if len(argv) >= 4:
         port = int(argv[3])
+    # TODO: ADD more args
     start_server(host, port)
 
 
