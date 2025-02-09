@@ -41,17 +41,15 @@ class APIView:
         for method in cls.methods:
             if method in cls.allowed_methods:
                 endpoint = getattr(instance, method)
-                bound_method = functools.partial(endpoint)  # Bind instance method
-
                 if method == "list":
-                    router.get("/", response_model=List[cls.schema_out])(bound_method)
+                    router.get("/", response_model=List[cls.schema_out])(endpoint)
                 elif method == "create":
-                    router.post("/", response_model=cls.schema_out)(bound_method)
+                    router.post("/", response_model=cls.schema_out)(endpoint)
                 elif method == "get":
-                    router.get("/{id}", response_model=cls.schema_out)(bound_method)
+                    router.get("/{id}", response_model=cls.schema_out)(endpoint)
                 elif method in ["update", "partial_update"]:
-                    router.put("/{id}", response_model=cls.schema_out)(bound_method)
+                    router.put("/{id}", response_model=cls.schema_out)(endpoint)
                 elif method == "delete":
-                    router.delete("/{id}")(bound_method)
+                    router.delete("/{id}")(endpoint)
 
         return router

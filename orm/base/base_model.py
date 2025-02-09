@@ -6,7 +6,7 @@ from typing import AsyncIterator, Optional, Type, Any
 
 from sqlalchemy.sql.functions import count
 
-DATABASE_URL = "postgresql+asyncpg://SG_USER:SG_PASS@localhost:5433/SG_DB"
+DATABASE_URL = "postgresql+asyncpg://SG_USER:SG_PASS@localhost:5432/SG_DB"
 DECLARATIVE_BASE = declarative_base()
 
 
