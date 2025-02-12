@@ -23,4 +23,4 @@ class ItemView(APIView):
     schema_out = ItemSchema
     methods = ["create", "get", "list", "delete"]  # Define what endpoints to expose
 
-router.include_router(ItemView.as_router(prefix="/items"))
+router.include_router(ItemView.as_router(prefix="/items", tags=["Items"]))

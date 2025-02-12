@@ -1,6 +1,4 @@
-import functools
 from typing import List, Type, Optional
-
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -32,8 +30,8 @@ class APIView:
         return self.model.objects.save()
 
     @classmethod
-    def as_router(cls, prefix: str = "") -> APIRouter:
-        router = APIRouter(prefix=prefix)
+    def as_router(cls, prefix: str = "", tags: list = None ) -> APIRouter:
+        router = APIRouter(prefix=prefix, tags=tags)
 
         # Create an instance of the class
         instance = cls()
@@ -41,15 +39,18 @@ class APIView:
         for method in cls.methods:
             if method in cls.allowed_methods:
                 endpoint = getattr(instance, method)
+                async def create_endpoint(data: cls.schema_in):  # Ensure this works
+                    return await endpoint(**data.dict())
+
                 if method == "list":
-                    router.get("/", response_model=List[cls.schema_out])(endpoint)
+                    router.get("/", response_model=List[cls.schema_out], name=method)(endpoint)
                 elif method == "create":
-                    router.post("/", response_model=cls.schema_out)(endpoint)
+                    router.post("/", response_model=cls.schema_out, name=method)(create_endpoint)
                 elif method == "get":
-                    router.get("/{id}", response_model=cls.schema_out)(endpoint)
+                    router.get("/{id}", response_model=cls.schema_out, name=method)(endpoint)
                 elif method in ["update", "partial_update"]:
-                    router.put("/{id}", response_model=cls.schema_out)(endpoint)
+                    router.put("/{id}", response_model=cls.schema_out, name=method)(create_endpoint)
                 elif method == "delete":
-                    router.delete("/{id}")(endpoint)
+                    router.delete("/{id}", name=method)(endpoint)
 
         return router
