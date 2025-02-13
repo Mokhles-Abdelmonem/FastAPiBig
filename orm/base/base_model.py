@@ -11,7 +11,7 @@ DECLARATIVE_BASE = declarative_base()
 
 
 class ORM:
-    def __init__(self, model: "BaseORM"):
+    def __init__(self, model: Type["BaseORM"]):
         self.model = model
 
     async def create(self, **kwargs):
@@ -23,15 +23,15 @@ class ORM:
             await db_session.refresh(instance)
             return instance
 
-    async def get(self, id):
+    async def get(self, pk: int):
         """Retrieve a record by ID."""
         async for db_session in self.model._get_session():
-            return await db_session.get(self.model, id)
+            return await db_session.get(self.model, int(pk))
 
-    async def update(self, id, **kwargs):
+    async def update(self, pk, **kwargs):
         """Update a record by ID."""
         async for db_session in self.model._get_session():
-            instance = await db_session.get(self.model, id)
+            instance = await db_session.get(self.model, pk)
             if not instance:
                 return None
             for key, value in kwargs.items():
@@ -40,10 +40,10 @@ class ORM:
             await db_session.refresh(instance)
             return instance
 
-    async def delete(self, id):
+    async def delete(self, pk):
         """Delete a record by ID."""
         async for db_session in self.model._get_session():
-            instance = await db_session.get(self.model, id)
+            instance = await db_session.get(self.model, pk)
             if not instance:
                 return False
             await db_session.delete(instance)
@@ -147,7 +147,7 @@ class BaseORM:
     @property
     def objects(cls) -> ORM:
         """Return an ORM instance for the class."""
-        return ORM(_class=cls)
+        return ORM(model=cls)
 
     async def save(self):
         async for db_session in self._get_session():
@@ -164,7 +164,7 @@ class User(BaseORM):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
-    profile_id = Column(Integer, ForeignKey('profile.id'))  # Example foreign key
+
 
 class DataBaseSessionManager:
     def __init__(self, database_url: str):

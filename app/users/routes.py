@@ -12,7 +12,6 @@ def read_users():
 
 
 class UserSchema(BaseModel):
-    id: int
     name: str
     email: str
 
