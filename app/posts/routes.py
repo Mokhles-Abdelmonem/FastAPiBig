@@ -1,8 +1,6 @@
-import functools
 from fastapi import APIRouter
-from typing import Type, List, Optional
-from pydantic import BaseModel
-
+from app.posts.models import Post
+from app.posts.schemas import PostSchemaIn, PostSchemaOut
 from views.apis.base import APIView
 
 router = APIRouter()
@@ -14,13 +12,16 @@ async def read_posts():
 
 
 
-class ItemSchema(BaseModel):
-    id: int
-    name: str
-
-class ItemView(APIView):
-    model = ItemSchema
-    schema_out = ItemSchema
+class PostView(APIView):
+    model = Post
+    schema_in = PostSchemaIn
+    schema_out = PostSchemaOut
     methods = ["create", "get", "list", "delete"]  # Define what endpoints to expose
 
-router.include_router(ItemView.as_router(prefix="/items", tags=["Items"]))
+
+    async def get(self, pk: int):
+        post = await self.model.objects.get(pk=pk)
+        return self.schema_out.model_validate(post.__dict__)
+
+
+router.include_router(PostView.as_router(prefix="/posts", tags=["Posts"]))

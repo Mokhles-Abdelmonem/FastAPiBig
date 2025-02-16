@@ -2,6 +2,8 @@ import os
 from fastapi import FastAPI
 import uvicorn
 
+from management.project_tables import create_project_tables
+
 
 def generate_routes_content(app_name):
     return f"""
@@ -63,6 +65,10 @@ def start_server(
     """Starts the FastAPI server."""
     uvicorn.run("management.fastapi_app:app", host=host, port=port, reload=reload, workers=workers)
 
+
+def create_tables(argv):
+    import asyncio
+    asyncio.run(create_project_tables())
 
 
 def startapp_handler(argv):

@@ -1,5 +1,5 @@
 import sys
-from management.commands_handlers import startapp_handler, runserver_handler, help_handler, show_help
+from management.commands_handlers import startapp_handler, runserver_handler, help_handler, show_help, create_tables
 
 
 class ManageCommands:
@@ -14,10 +14,12 @@ class ManageCommands:
         command = self.argv[1]
 
         handler = {
+            "create_tables": create_tables,
             "startapp": startapp_handler,
             "runserver": runserver_handler,
         }.get(command, help_handler)
 
+        print(handler)
         handler(self.argv)
 
 

@@ -159,13 +159,6 @@ class BaseORM:
             return merged_instance  # Return the updated instance
 
 
-# Define your models by inheriting from Base
-class User(BaseORM):
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    email = Column(String, unique=True, index=True)
-
-
 class DataBaseSessionManager:
     def __init__(self, database_url: str):
         """Initialize the database engine and sessionmaker with connection pooling."""
@@ -194,7 +187,7 @@ class DataBaseSessionManager:
             raise Exception("DataBaseSessionManager is not initialized")
 
         async with self._engine.begin() as conn:
-            await conn.run_sync(DECLARATIVE_BASE.metadata.create_all)
+            await conn.run_sync(BaseORM.metadata.create_all)
 
     @contextlib.asynccontextmanager
     async def session(self) -> AsyncIterator[AsyncSession]:
@@ -213,50 +206,3 @@ class DataBaseSessionManager:
 # Create tables (if not already created)
 db_manager = DataBaseSessionManager(DATABASE_URL)
 BaseORM.initialize(db_manager)
-
-if __name__ == "__main__":
-    test_num = 15
-    import asyncio
-
-    async def main():
-        await db_manager.create_all_tables()
-        #
-        # Create multiple users
-        user  = User(
-            name="John Doe", email=f"john_{test_num}.doe@example.com"
-        )
-        print([d for d in User.column_objects()])
-        # await User.objects.create(
-        #     name="Jane Doe", email=f"jane_{test_num}.doe@example.com"
-        # )
-
-        # # Update a user
-        # user = await User.objects.get(id=33)
-        # if user:
-        #     user.name = "John Doe Updated"
-        #     await user.save()
-        #
-        # # Delete a user
-        # await User.objects.delete(id=33)
-        #
-        # # Get all users
-        # users = await User.objects.all()
-        # print([user.__dict__ for user in users])
-        #
-        # # Filter users
-        # filtered_users = await User.objects.filter(name="Jane Doe")
-        # print([user.__dict__ for user in filtered_users])
-        #
-        # # Get the first user
-        # first_user = await User.objects.first(name="Jane Doe")
-        # print(first_user.__dict__)
-        #
-        # # Count users
-        # user_count = await User.objects.count()
-        # print(f"Total users: {user_count}")
-        #
-        # # Check if a user exists
-        # exists = await User.objects.exists(email=f"john_{test_num}.doe@example.com")
-        # print(f"User exists: {exists}")
-
-    asyncio.run(main())
