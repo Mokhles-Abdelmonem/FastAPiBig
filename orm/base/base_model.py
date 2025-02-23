@@ -1,12 +1,17 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy import Column, Integer, String, select, ForeignKey
-from sqlalchemy.orm import as_declarative, declared_attr, declarative_base
+from sqlalchemy.orm import as_declarative, declared_attr, declarative_base, sessionmaker, Session
 import contextlib
-from typing import AsyncIterator, Optional, Type, Any
+from typing import AsyncIterator, Optional, Type, Any, Iterator
 
 from sqlalchemy.sql.functions import count
 
-DATABASE_URL = "postgresql+asyncpg://SG_USER:SG_PASS@localhost:5432/SG_DB"
+from sqlalchemy import create_engine
+
+
+
+DATABASE_URL_ASYNC = "postgresql+asyncpg://SG_USER:SG_PASS@localhost:5432/SG_DB"
+DATABASE_URL_SYNC = "postgresql+psycopg://SG_USER:SG_PASS@localhost:5432/SG_DB"
 DECLARATIVE_BASE = declarative_base()
 
 
@@ -16,7 +21,7 @@ class ORM:
 
     async def create(self, **kwargs):
         """Create a new record."""
-        async for db_session in self.model._get_session():
+        async for db_session in self.model._async_session():
             instance = self.model(**kwargs)
             db_session.add(instance)
             await db_session.commit()
@@ -25,12 +30,15 @@ class ORM:
 
     async def get(self, pk: int):
         """Retrieve a record by ID."""
-        async for db_session in self.model._get_session():
-            return await db_session.get(self.model, int(pk))
+        for db_session in self.model._sync_session():
+            result = db_session.execute(select(self.model).filter(self.model.id == pk))
+            return result.scalars().first()
+
+
 
     async def update(self, pk, **kwargs):
         """Update a record by ID."""
-        async for db_session in self.model._get_session():
+        async for db_session in self.model._async_session():
             instance = await db_session.get(self.model, pk)
             if not instance:
                 return None
@@ -42,7 +50,7 @@ class ORM:
 
     async def delete(self, pk):
         """Delete a record by ID."""
-        async for db_session in self.model._get_session():
+        async for db_session in self.model._async_session():
             instance = await db_session.get(self.model, pk)
             if not instance:
                 return False
@@ -52,28 +60,28 @@ class ORM:
 
     async def all(self):
         """Retrieve all records."""
-        async for db_session in self.model._get_session():
+        async for db_session in self.model._async_session():
             query = select(self.model)
             result = await db_session.execute(query)
             return result.scalars().all()
 
     async def filter(self, **filters):
         """Filter records by criteria."""
-        async for db_session in self.model._get_session():
+        async for db_session in self.model._async_session():
             query = select(self.model).where(*self._filter_conditions(filters))
             result = await db_session.execute(query)
             return result.scalars().all()
 
     async def first(self, **filters):
         """Retrieve the first record matching the criteria."""
-        async for db_session in self.model._get_session():
+        async for db_session in self.model._async_session():
             query = select(self.model).where(*self._filter_conditions(filters))
             result = await db_session.execute(query)
             return result.scalars().first()
 
     async def count(self):
         """Count all records."""
-        async for db_session in self.model._get_session():
+        async for db_session in self.model._async_session():
             result = await db_session.execute(select(count()).select_from(self.model))
             return result.scalar()
 
@@ -82,7 +90,7 @@ class ORM:
         return await self.first(**filters) is not None
 
     async def execute_query(self, query):
-        async for db_session in self.model._get_session():
+        async for db_session in self.model._async_session():
             result = await db_session.execute(query)
             return result
 
@@ -97,6 +105,19 @@ class ORM:
                     f"Model {self.model.__name__} does not have '{attr}' attribute"
                 )
         return filter_conditions
+
+    async def select_related(self, attrs: list[str] = None, **kwargs):
+        attrs = attrs or []
+        for attr in attrs:
+            if not hasattr(self.model, attr):
+                raise AttributeError(f"Model {self.__name__} does not have '{attr}' attribute")
+        async for db_session in self.model._async_session():
+            result = await db_session.execute(select(self.model).filter(*self._filter_conditions(kwargs)))
+            instance = result.scalars().first()
+            if not instance:
+                return None
+            await db_session.refresh(instance, attrs)
+            return instance
 
 
 @as_declarative()
@@ -136,11 +157,20 @@ class BaseORM:
         cls._db_manager = db_manager
 
     @classmethod
-    async def _get_session(cls) -> AsyncIterator[AsyncSession]:
+    async def _async_session(cls) -> AsyncIterator[AsyncSession]:
         """Get an async session."""
         if cls._db_manager is None:
             raise Exception("DataBaseSessionManager is not initialized for Base.")
-        async with cls._db_manager.session() as session:
+        async with cls._db_manager.async_session() as session:
+            yield session
+
+
+    @classmethod
+    def _sync_session(cls) -> Iterator[Session]:
+        """Get an async session."""
+        if cls._db_manager is None:
+            raise Exception("DataBaseSessionManager is not initialized for Base.")
+        with cls._db_manager.sync_session() as session:
             yield session
 
     @classmethod
@@ -150,7 +180,7 @@ class BaseORM:
         return ORM(model=cls)
 
     async def save(self):
-        async for db_session in self._get_session():
+        async for db_session in self._async_session():
             merged_instance = await db_session.merge(
                 self
             )  # Ensures no duplicate sessions
@@ -160,41 +190,60 @@ class BaseORM:
 
 
 class DataBaseSessionManager:
-    def __init__(self, database_url: str):
-        """Initialize the database engine and sessionmaker with connection pooling."""
-        self._engine = create_async_engine(
-            url=database_url,
-            pool_size=5,  # Adjust pool size as needed
-            max_overflow=2,  # Adjust overflow size as needed
+    def __init__(self, async_database_url: str, sync_database_url: str):
+        """Initialize both async and sync database engines and sessionmakers."""
+        # Async Engine & Session
+        self._async_engine = create_async_engine(
+            url=async_database_url,
+            pool_size=5,
+            max_overflow=2,
             pool_timeout=10,
             pool_recycle=600,
         )
-        self._sessionmaker = async_sessionmaker(
-            bind=self._engine, expire_on_commit=False, class_=AsyncSession
+        self._async_sessionmaker = async_sessionmaker(
+            bind=self._async_engine, expire_on_commit=False, class_=AsyncSession
         )
 
+        # Sync Engine & Session
+        self._sync_engine = create_engine(
+            url=sync_database_url,
+            pool_size=5,
+            max_overflow=2,
+            pool_timeout=10,
+            pool_recycle=600,
+        )
+        self._sync_sessionmaker = sessionmaker(bind=self._sync_engine, expire_on_commit=False, class_=Session)
+
     async def close(self):
-        """Dispose of the engine and reset sessionmaker."""
-        if self._engine is None:
-            raise Exception("DataBaseSessionManager is not initialized")
-        await self._engine.dispose()
-        self._engine = None
-        self._sessionmaker = None
+        """Dispose of the async engine."""
+        if self._async_engine:
+            await self._async_engine.dispose()
+            self._async_engine = None
+            self._async_sessionmaker = None
+        if self._sync_engine:
+            self._sync_engine.dispose()
+            self._sync_engine = None
+            self._sync_sessionmaker = None
 
-    async def create_all_tables(self):
-        """Create all tables."""
-        if self._engine is None:
+    async def create_all_tables(self, base):
+        """Create all tables asynchronously."""
+        if self._async_engine is None:
             raise Exception("DataBaseSessionManager is not initialized")
+        async with self._async_engine.begin() as conn:
+            await conn.run_sync(base.metadata.create_all)
 
-        async with self._engine.begin() as conn:
-            await conn.run_sync(BaseORM.metadata.create_all)
+    def create_all_tables_sync(self, base):
+        """Create all tables synchronously."""
+        if self._sync_engine is None:
+            raise Exception("DataBaseSessionManager is not initialized")
+        base.metadata.create_all(self._sync_engine)
 
     @contextlib.asynccontextmanager
-    async def session(self) -> AsyncIterator[AsyncSession]:
+    async def async_session(self) -> AsyncIterator[AsyncSession]:
         """Provide an async session."""
-        if self._sessionmaker is None:
+        if self._async_sessionmaker is None:
             raise Exception("DataBaseSessionManager is not initialized")
-        async with self._sessionmaker() as session:
+        async with self._async_sessionmaker() as session:
             try:
                 yield session
                 await session.commit()
@@ -202,7 +251,22 @@ class DataBaseSessionManager:
                 await session.rollback()
                 raise e
 
+    @contextlib.contextmanager
+    def sync_session(self) -> Iterator[Session]:
+        """Provide a sync session."""
+        if self._sync_sessionmaker is None:
+            raise Exception("DataBaseSessionManager is not initialized")
+        session = self._sync_sessionmaker()
+        try:
+            yield session
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
 
 # Create tables (if not already created)
-db_manager = DataBaseSessionManager(DATABASE_URL)
+db_manager = DataBaseSessionManager(DATABASE_URL_ASYNC, DATABASE_URL_SYNC)
 BaseORM.initialize(db_manager)

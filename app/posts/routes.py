@@ -23,5 +23,8 @@ class PostView(APIView):
         post = await self.model.objects.get(pk=pk)
         return self.schema_out.model_validate(post.__dict__)
 
+    async def list(self):
+        instances = await self.model.objects.filter()
+        return [self.schema_out.model_validate(instance.__dict__) for instance in instances]
 
 router.include_router(PostView.as_router(prefix="/posts", tags=["Posts"]))

@@ -18,4 +18,8 @@ class UserView(APIView):
     schema_out = UserSchemaOut
     methods = ["create", "get", "list", "delete"]  # Define what endpoints to expose
 
+    async def get(self, pk: int):
+        user = await self.model.objects.select_related(id=pk,  attrs=["posts"])
+        return self.schema_out.model_validate(user.__dict__)
+
 router.include_router(UserView.as_router(prefix="/users", tags=["Users"]))
