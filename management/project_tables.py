@@ -17,9 +17,8 @@ def import_models():
                     module_name = f"app.{app_name}.models"
                     __import__(module_name)
                     print(module_name)
-                except (ModuleNotFoundError, AttributeError) as e :
+                except (ModuleNotFoundError, AttributeError) as e:
                     print(e)
-
 
     # For type-based structure
     routes_dir = os.path.join(apps_dir, "routes")
@@ -30,7 +29,7 @@ def import_models():
                     module_name = f"app.models.{route_file[:-3]}"
                     __import__(module_name)
                     print(module_name)
-                except (ModuleNotFoundError, AttributeError) as e :
+                except (ModuleNotFoundError, AttributeError) as e:
                     print(e)
 
 

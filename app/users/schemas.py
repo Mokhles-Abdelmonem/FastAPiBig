@@ -9,7 +9,6 @@ class UserSchemaIn(BaseModel):
         from_attributes = True  # Enable compatibility with SQLAlchemy models
 
 
-
 class UserSchemaOut(BaseModel):
     id: int
     name: str
@@ -17,4 +16,3 @@ class UserSchemaOut(BaseModel):
 
     class Config:
         from_attributes = True  # Enable compatibility with SQLAlchemy models
-

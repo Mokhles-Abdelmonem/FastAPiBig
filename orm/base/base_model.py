@@ -1,13 +1,18 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy import Column, Integer, String, select, ForeignKey
-from sqlalchemy.orm import as_declarative, declared_attr, declarative_base, sessionmaker, Session
+from sqlalchemy.orm import (
+    as_declarative,
+    declared_attr,
+    declarative_base,
+    sessionmaker,
+    Session,
+)
 import contextlib
 from typing import AsyncIterator, Optional, Type, Any, Iterator
 
 from sqlalchemy.sql.functions import count
 
 from sqlalchemy import create_engine
-
 
 
 DATABASE_URL_ASYNC = "postgresql+asyncpg://SG_USER:SG_PASS@localhost:5432/SG_DB"
@@ -33,8 +38,6 @@ class ORM:
         for db_session in self.model._sync_session():
             result = db_session.execute(select(self.model).filter(self.model.id == pk))
             return result.scalars().first()
-
-
 
     async def update(self, pk, **kwargs):
         """Update a record by ID."""
@@ -110,9 +113,13 @@ class ORM:
         attrs = attrs or []
         for attr in attrs:
             if not hasattr(self.model, attr):
-                raise AttributeError(f"Model {self.__name__} does not have '{attr}' attribute")
+                raise AttributeError(
+                    f"Model {self.__name__} does not have '{attr}' attribute"
+                )
         async for db_session in self.model._async_session():
-            result = await db_session.execute(select(self.model).filter(*self._filter_conditions(kwargs)))
+            result = await db_session.execute(
+                select(self.model).filter(*self._filter_conditions(kwargs))
+            )
             instance = result.scalars().first()
             if not instance:
                 return None
@@ -135,14 +142,16 @@ class BaseORM:
     @classmethod
     def column_objects(cls):
         """Returns a dictionary of column objects for the model."""
-        if hasattr(cls, '__table__'):
+        if hasattr(cls, "__table__"):
             for col in cls.__table__.c:
                 column_name = col.name
                 column_type = col.type
                 is_primary = col.primary_key
                 has_relation = bool(col.foreign_keys)
 
-                print(f"Column: {column_name}, Type: {column_type}, Primary: {is_primary}")
+                print(
+                    f"Column: {column_name}, Type: {column_type}, Primary: {is_primary}"
+                )
 
                 if has_relation:
                     foreign_keys = [fk.target_fullname for fk in col.foreign_keys]
@@ -163,7 +172,6 @@ class BaseORM:
             raise Exception("DataBaseSessionManager is not initialized for Base.")
         async with cls._db_manager.async_session() as session:
             yield session
-
 
     @classmethod
     def _sync_session(cls) -> Iterator[Session]:
@@ -212,7 +220,9 @@ class DataBaseSessionManager:
             pool_timeout=10,
             pool_recycle=600,
         )
-        self._sync_sessionmaker = sessionmaker(bind=self._sync_engine, expire_on_commit=False, class_=Session)
+        self._sync_sessionmaker = sessionmaker(
+            bind=self._sync_engine, expire_on_commit=False, class_=Session
+        )
 
     async def close(self):
         """Dispose of the async engine."""

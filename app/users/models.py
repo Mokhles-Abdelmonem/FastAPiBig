@@ -12,4 +12,3 @@ class User(BaseORM):
 
     # Relationship to Post
     posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
-

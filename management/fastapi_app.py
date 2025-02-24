@@ -29,10 +29,13 @@ def get_app():
                 try:
                     module_name = f"app.routes.{route_file[:-3]}"
                     routes_module = __import__(module_name, fromlist=["router"])
-                    app.include_router(routes_module.router, prefix=f"/{route_file[:-3]}")
+                    app.include_router(
+                        routes_module.router, prefix=f"/{route_file[:-3]}"
+                    )
                 except (ModuleNotFoundError, AttributeError):
                     pass
 
     return app
+
 
 app = get_app()
