@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy import Column, Integer, String, select, ForeignKey
+from sqlalchemy import select
 from sqlalchemy.orm import (
     as_declarative,
     declared_attr,

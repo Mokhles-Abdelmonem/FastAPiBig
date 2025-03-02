@@ -57,7 +57,10 @@ def create_feature_based_structure(app_name):
 
 
 def start_server(
-    host: str = "127.0.0.1", port: int = 8000, reload: bool = True, workers: int | None = None
+    host: str = "127.0.0.1",
+    port: int = 8000,
+    reload: bool = True,
+    workers: int | None = None,
 ):
     """Starts the FastAPI server."""
     uvicorn.run(

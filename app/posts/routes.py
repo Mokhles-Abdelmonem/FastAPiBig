@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from app.posts.models import Post
 from app.posts.schemas import PostSchemaIn, PostSchemaOut, CustomPostSchemaIn
-from views.apis.base import APIView
+from views.apis.operations import APIView
 
 router = APIRouter()
 

@@ -3,7 +3,9 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 
-class BaseAPIView:
+class BaseAPI:
+    """Base class that provides shared logic for all operations."""
+
     schema_in: Optional[Type[BaseModel]] = None
     schema_out: Optional[Type[BaseModel]] = None
     schemas_in: Dict[str, Type[BaseModel]] = {}
@@ -14,6 +16,7 @@ class BaseAPIView:
 
     post_methods: List[str] = []
     get_methods: List[str] = []
+    list_methods: List[str] = []
     put_methods: List[str] = []
     patch_methods: List[str] = []
     delete_methods: List[str] = []
@@ -33,108 +36,124 @@ class BaseAPIView:
 
         self.wrapper = Wrapper
         self.router = router or APIRouter()
-        self.load_base_methods()
-        self.load_post_methods()
+        self.load_all_methods()  # Dynamically load methods from all mixins
+
+    @classmethod
+    def as_router(
+        cls: Type["BaseAPI"], prefix: str, tags: Optional[List[str]] = None
+    ) -> APIRouter:
+        """Create an instance of the API class and return its router."""
+        instance = cls(APIRouter(prefix=prefix, tags=tags))
+        return instance.router
 
     def _get_schema_in_class(self, method: str = None) -> Optional[Type[BaseModel]]:
         return self.schemas_in.get(method, self.schema_in)
 
-    def _get_schema_out_class(self, method: str = None) -> Optional[Type[BaseModel]]:
-        return self.schemas_out.get(method, self.schema_out)
+    def _get_schema_out_class(
+        self, method: str = None, as_list: bool = False
+    ) -> Type[BaseModel]:
+        schema = self.schemas_out.get(method, self.schema_out)
+        return List[schema] if as_list else schema
 
-    @classmethod
-    def as_router(cls: Type["BaseAPIView"], prefix: str, tags: Optional[List[str]] = None) -> APIRouter:
-        instance = cls(APIRouter(prefix=prefix, tags=tags))
-        return instance.router
-
-    def register_method_wrapper(self, method: str, set_annotations: bool = False):
+    def register_method_wrapper(self, method: str, set_annotations=False):
+        """Attach method to wrapper class and optionally set type annotations."""
         attr = getattr(self, method, None)
         if not attr:
-            raise AttributeError(f"Method '{method}' not found in {self.__class__.__name__}")
+            raise KeyError(f"Method '{method}' not found in {self.__class__.__name__}")
 
         setattr(self.wrapper, method, attr)
-
         if set_annotations:
-            attr.__annotations__["data"] = self._get_schema_out_class(method)
+            attr.__annotations__["data"] = self._get_schema_in_class(method)
 
     def _register_route(self, method_type: str, method_name: str, path: str):
+        """Dynamically register API route based on the method type."""
         if not hasattr(self.wrapper, method_name):
-            raise AttributeError(f"Method '{method_name}' not found in wrapper.")
+            raise KeyError(f"Method '{method_name}' not found in wrapper.")
 
         route_method = getattr(self.router, method_type)
+        as_list = True if method_name == "list" else False
         route_method(
             path,
-            response_model=self._get_schema_out_class(method_name),
+            response_model=self._get_schema_out_class(
+                method=method_name, as_list=as_list
+            ),
             name=method_name,
         )(getattr(self.wrapper, method_name))
 
-    def load_post(self, method: str, path: str = "/"):
-        self._register_route("post", method, path)
+    def load_all_methods(self):
+        """Dynamically call _load_methods() from all mixins in order."""
+        for base in self.__class__.mro():
+            if hasattr(base, "_load_methods"):
+                base._load_methods(self)
 
-    def load_get(self, method: str, path: str = "/{pk}"):
-        self._register_route("get", method, path)
 
-    def load_list(self, method: str, path: str = "/"):
-        self._register_route("get", method, path)
+class RegisterCreate(BaseAPI):
+    def _load_methods(self):
+        self.register_method_wrapper("create", set_annotations=True)
+        self._register_route("post", "create", "/")
+        self._load_post_methods()
 
-    def load_put(self, method: str, path: str = "/{pk}"):
-        self._register_route("put", method, path)
-
-    def load_delete(self, method: str, path: str = "/{pk}"):
-        self._register_route("delete", method, path)
-
-    def load_post_methods(self):
+    def _load_post_methods(self):
         for method in self.post_methods:
+            self.register_method_wrapper(method, set_annotations=True)
+            self._register_route("post", method, f"/{method}")
+
+
+class RegisterRetrieve(BaseAPI):
+    def _load_methods(self):
+        self.register_method_wrapper("get")
+        self._register_route("get", "get", "/{pk}")
+        self._load_get_methods()
+
+    def _load_get_methods(self):
+        for method in self.get_methods:
             self.register_method_wrapper(method)
-            self.load_post(method=method, path=f"/{method}")
-
-    def load_base_methods(self):
-        for method in self.methods:
-            if method in self.allowed_methods:
-                set_annotations = method in ["create", "update", "partial_update"]
-                self.register_method_wrapper(method, set_annotations=set_annotations)
-
-                if method == "create":
-                    self.load_post(method)
-                elif method in ["update", "partial_update"]:
-                    self.load_put(method)
-                elif method == "get":
-                    self.load_get(method)
-                elif method == "list":
-                    self.load_list(method)
-                elif method == "delete":
-                    self.load_delete(method)
+            self._register_route("get", method, f"/{method}")
 
 
-class APIView(BaseAPIView):
+class RegisterUpdate(BaseAPI):
+    def _load_methods(self):
+        self.register_method_wrapper("update", set_annotations=True)
+        self._register_route("put", "update", "/{pk}")
+        self._load_put_methods()
 
-    async def create(self, data: BaseModel):
-        instance = await self.model.objects.create(**data.dict())
-        return self.schema_out.model_validate(instance.__dict__)
+    def _load_put_methods(self):
+        for method in self.put_methods:
+            self.register_method_wrapper(method, set_annotations=True)
+            self._register_route("put", method, f"/{method}/" + "/{pk}")
 
-    async def get(self, pk: int):
-        instance = await self.model.objects.get(pk=pk)
-        return self.schema_out.model_validate(instance.__dict__)
 
-    async def update(self, pk: int, data: BaseModel):
-        instance = await self.model.objects.get(pk=pk)
-        for key, value in data.dict().items():
-            setattr(instance, key, value)
-        await instance.save()
-        return self.schema_out.model_validate(instance.__dict__)
+class RegisterPartialUpdate(BaseAPI):
+    def _load_methods(self):
+        self.register_method_wrapper("partial_update", set_annotations=True)
+        self._register_route("patch", "partial_update", "/{pk}")
+        self._load_patch_methods()
 
-    async def delete(self, pk: int):
-        instance = await self.model.objects.get(pk=pk)
-        await instance.delete()
-        return {"detail": "Deleted successfully"}
+    def _load_patch_methods(self):
+        for method in self.delete_methods:
+            self.register_method_wrapper(method, set_annotations=True)
+            self._register_route("patch", method, f"/{method}/" + "/{pk}")
 
-    async def list(self):
-        instances = await self.model.objects.all()
-        return [self.schema_out.model_validate(instance.__dict__) for instance in instances]
 
-    async def partial_update(self, pk: int, data: BaseModel):
-        instance = await self.model.objects.get(pk=pk)
-        for key, value in data.dict(exclude_unset=True).items():
-            setattr(instance, key, value)
-        await instance.save()
-        return self.schema_out.model_validate(instance.__dict__)
+class RegisterDelete(BaseAPI):
+    def _load_methods(self):
+        self.register_method_wrapper("delete")
+        self._register_route("delete", "delete", "/{pk}")
+        self._load_delete_methods()
+
+    def _load_delete_methods(self):
+        for method in self.delete_methods:
+            self.register_method_wrapper(method)
+            self._register_route("delete", method, f"/{method}/" + "/{pk}")
+
+
+class RegisterList(BaseAPI):
+    def _load_methods(self):
+        self.register_method_wrapper("list")
+        self._register_route("get", "list", "/")
+        self._load_list_methods()
+
+    def _load_list_methods(self):
+        for method in self.list_methods:
+            self.register_method_wrapper(method)
+            self._register_route("get", method, f"/{method}")
