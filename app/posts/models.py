@@ -1,11 +1,10 @@
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy import Column, Integer, String, ForeignKey
+from orm.base.base_model import DECLARATIVE_BASE
 
-from orm.base.base_model import BaseORM
 
-
-class Post(BaseORM):
-
+class Post(DECLARATIVE_BASE):
+    __tablename__ = "post"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
     content = Column(String)

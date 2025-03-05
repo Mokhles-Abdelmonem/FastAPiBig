@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Type, Callable
 
 
-def api_view(model: Type["BaseORM"]):
+def api_view(model: Type["ORM"]):
     """
     A decorator for handling common CRUD operations in FastAPI routes.
     - Detects CRUD type from function name (`create`, `get`, `update`, `delete`).

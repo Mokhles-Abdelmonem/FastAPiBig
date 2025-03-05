@@ -1,11 +1,11 @@
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, ForeignKey
-from orm.base.base_model import BaseORM
+from orm.base.base_model import DECLARATIVE_BASE
 
 
 # Define the User model
-class User(BaseORM):
-
+class User(DECLARATIVE_BASE):
+    __tablename__ = "user"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     email = Column(String, unique=True, index=True)

@@ -2,6 +2,8 @@ from typing import List, Type, Optional, Dict
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from orm.base.base_model import ORM
+
 
 class BaseAPI:
     """Base class that provides shared logic for all operations."""
@@ -11,7 +13,7 @@ class BaseAPI:
     schemas_in: Dict[str, Type[BaseModel]] = {}
     schemas_out: Dict[str, Type[BaseModel]] = {}
 
-    model: Optional[Type] = None
+    model: Type["ORM"] = None
     methods: List[str] = []
 
     post_methods: List[str] = []
@@ -31,9 +33,9 @@ class BaseAPI:
     ]
 
     def __init__(self, router: Optional[APIRouter] = None):
+        self._model = ORM(model=self.model)
         class Wrapper:
             pass
-
         self.wrapper = Wrapper
         self.router = router or APIRouter()
         self.load_all_methods()  # Dynamically load methods from all mixins
