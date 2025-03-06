@@ -11,6 +11,7 @@ from orm.base.session_manager import DataBaseSessionManager
 
 DECLARATIVE_BASE = declarative_base()
 
+
 class ORMSession:
     _db_manager: Optional["DataBaseSessionManager"] = None
 
@@ -67,7 +68,7 @@ class ORM(ORMSession):
             await db_session.refresh(instance)
             return instance
 
-    async def delete(self, pk, model = None):
+    async def delete(self, pk, model=None):
         """Delete a record by ID."""
         model = model or self.model
         async for db_session in self._async_session():
@@ -78,8 +79,7 @@ class ORM(ORMSession):
             await db_session.commit()
             return True
 
-
-    async def save(self, model = None):
+    async def save(self, model=None):
         model = model or self.model
         async for db_session in self._async_session():
             merged_instance = await db_session.merge(

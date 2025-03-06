@@ -83,4 +83,3 @@ class DataBaseSessionManager:
             raise e
         finally:
             session.close()
-

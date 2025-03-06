@@ -40,7 +40,6 @@ class RetrieveOperation(RegisterRetrieve):
     async def _get(self, pk: int):
         return await self._model.get(pk=pk)
 
-
     async def pre_get(self, pk: int):
         pass
 
@@ -120,7 +119,6 @@ class ListOperation(RegisterList):
 
     async def _list(self):
         return await self._model.all()
-
 
     async def pre_list(self):
         pass

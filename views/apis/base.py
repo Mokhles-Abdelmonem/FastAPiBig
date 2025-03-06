@@ -1,5 +1,5 @@
 from typing import List, Type, Optional, Dict
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
 from orm.base.base_model import ORM
@@ -32,10 +32,17 @@ class BaseAPI:
         "partial_update",
     ]
 
+    dependencies: List[Depends] = []
+    dependencies_by_method: Dict[str, List[Depends]] = {}
+
+    request: Request
+
     def __init__(self, router: Optional[APIRouter] = None):
         self._model = ORM(model=self.model)
+
         class Wrapper:
             pass
+
         self.wrapper = Wrapper
         self.router = router or APIRouter()
         self.load_all_methods()  # Dynamically load methods from all mixins
@@ -51,11 +58,11 @@ class BaseAPI:
     def _get_schema_in_class(self, method: str = None) -> Optional[Type[BaseModel]]:
         return self.schemas_in.get(method, self.schema_in)
 
-    def _get_schema_out_class(
-        self, method: str = None, as_list: bool = False
-    ) -> Type[BaseModel]:
-        schema = self.schemas_out.get(method, self.schema_out)
-        return List[schema] if as_list else schema
+    def _get_schema_out_class(self, method: str = None) -> Type[BaseModel]:
+        return self.schemas_out.get(method, self.schema_out)
+
+    def _get_dependencies(self, method: str = None) -> List[Depends]:
+        return self.dependencies_by_method.get(method, self.dependencies)
 
     def register_method_wrapper(self, method: str, set_annotations=False):
         """Attach method to wrapper class and optionally set type annotations."""
@@ -76,9 +83,8 @@ class BaseAPI:
         as_list = True if method_name == "list" else False
         route_method(
             path,
-            response_model=self._get_schema_out_class(
-                method=method_name, as_list=as_list
-            ),
+            response_model=self._get_schema_out_class(method=method_name),
+            dependencies=self._get_dependencies(method_name),
             name=method_name,
         )(getattr(self.wrapper, method_name))
 
@@ -159,3 +165,6 @@ class RegisterList(BaseAPI):
         for method in self.list_methods:
             self.register_method_wrapper(method)
             self._register_route("get", method, f"/{method}")
+
+    def _get_schema_out_class(self, method: str = None) -> Type[List[BaseModel]]:
+        return List[self.schemas_out.get(method, self.schema_out)]

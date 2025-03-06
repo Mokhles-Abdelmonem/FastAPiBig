@@ -19,8 +19,6 @@ class UserView(APIView):
     post_methods = ["create_user"]
     get_methods = ["get_user"]
 
-
-
     async def create_user(self, create_data: CreateUserSchema):
         instance = await self.model.objects.create(
             name=create_data.name, email=create_data.email
