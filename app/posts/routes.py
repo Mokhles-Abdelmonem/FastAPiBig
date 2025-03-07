@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from app.posts.models import Post
 from app.posts.schemas import PostSchemaIn, PostSchemaOut
 from views.apis.operations import APIView
+from fastapi.security import OAuth2PasswordBearer
+from typing import Annotated
+
 
 router = APIRouter()
 
@@ -9,6 +12,18 @@ router = APIRouter()
 @router.get("/")
 async def read_posts():
     return {"message": "posts app"}
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+
+def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    return token
 
 
 class CommonQueryParams:
@@ -29,7 +44,7 @@ class PostView(APIView):
     schema_in = PostSchemaIn
     schema_out = PostSchemaOut
     methods = ["create", "get", "list", "delete"]  # Define what endpoints to expose
-    dependencies = [Depends(CommonQueryParams)]
+    dependencies = [Depends(get_current_user)]
     dependencies_by_method = {
         "list": [Depends(QueryParams)],
     }
