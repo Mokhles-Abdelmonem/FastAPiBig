@@ -1,6 +1,7 @@
 import os
 
 from FastAPIBig.management import db_manager
+from FastAPIBig.orm.base.base_model import DECLARATIVE_BASE
 
 
 def import_models():
@@ -36,4 +37,4 @@ def import_models():
 
 async def create_project_tables():
     import_models()
-    await db_manager.create_all_tables()
+    await db_manager.create_all_tables(DECLARATIVE_BASE)

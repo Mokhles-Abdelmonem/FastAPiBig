@@ -28,14 +28,6 @@ class ORMSession:
         async with cls._db_manager.async_session() as session:
             yield session
 
-    @classmethod
-    def _sync_session(cls) -> Iterator[Session]:
-        """Get an async session."""
-        if cls._db_manager is None:
-            raise Exception("DataBaseSessionManager is not initialized for Base.")
-        with cls._db_manager.sync_session() as session:
-            yield session
-
 
 class ORM(ORMSession):
     def __init__(self, model: Type["DECLARATIVE_BASE"]):
@@ -52,8 +44,8 @@ class ORM(ORMSession):
 
     async def get(self, pk: int):
         """Retrieve a record by ID."""
-        for db_session in self._sync_session():
-            result = db_session.execute(select(self.model).filter(self.model.id == pk))
+        async for db_session in self._async_session():
+            result = await db_session.execute(select(self.model).filter(self.model.id == pk))
             return result.scalars().first()
 
     async def update(self, pk, **kwargs):

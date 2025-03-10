@@ -20,13 +20,13 @@ class UserView(APIView):
     get_methods = ["get_user"]
 
     async def create_user(self, create_data: CreateUserSchema):
-        instance = await self.model.objects.create(
+        instance = await self._model.create(
             name=create_data.name, email=create_data.email
         )
         return self.schema_out.model_validate(instance.__dict__)
 
     async def get_user(self, pk: int):
-        user = await self.model.objects.select_related(id=pk, attrs=["posts"])
+        user = await self._model.select_related(id=pk, attrs=["posts"])
         return self.schema_out.model_validate(user.__dict__)
 
 

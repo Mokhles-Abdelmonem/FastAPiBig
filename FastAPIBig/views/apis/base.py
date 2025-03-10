@@ -119,7 +119,7 @@ class RegisterRetrieve(BaseAPI):
     def _load_get_methods(self):
         for method in self.get_methods:
             self.register_method_wrapper(method)
-            self._register_route("get", method, f"/{method}")
+            self._register_route("get", method, f"/{method}" + "/{pk}")
 
 
 class RegisterUpdate(BaseAPI):

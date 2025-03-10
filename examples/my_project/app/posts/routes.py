@@ -44,7 +44,6 @@ class PostView(APIView):
     schema_in = PostSchemaIn
     schema_out = PostSchemaOut
     methods = ["create", "get", "list", "delete"]  # Define what endpoints to expose
-    dependencies = [Depends(get_current_user)]
     dependencies_by_method = {
         "list": [Depends(QueryParams)],
     }

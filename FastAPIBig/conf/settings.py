@@ -1,8 +1,5 @@
 import importlib
-import sys
 
-print("<<<<<<<<<<<<<<<<<<<<<<<<<< sys.path >>>>>>>>>>>>>>>>>>>>>>>>>>")
-print(sys.path)
 
 def get_project_settings():
     """
@@ -10,10 +7,8 @@ def get_project_settings():
     Falls back to default settings inside the package.
     """
     try:
-        settings = importlib.import_module("settings")
-        print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        print(settings)
+        settings = importlib.import_module("core.settings")
     except ModuleNotFoundError:
-        from FastAPIBig.management import default_settings as settings  # Fallback to internal defaults
+        raise Exception("Could not import settings module.")
 
     return settings
