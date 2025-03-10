@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 from pathlib import Path
 
@@ -7,7 +6,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = ''
+SECRET_KEY = ""
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -15,11 +14,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
-
-MIDDLEWARE = [
-]
+MIDDLEWARE = []
 
 
-
-DATABASE_URL_ASYNC = "postgresql+asyncpg://SG_USER:SG_PASS@localhost:5432/SG_DB"
-DATABASE_URL_SYNC = "postgresql+psycopg://SG_USER:SG_PASS@localhost:5432/SG_DB"
+DATABASE_URL = "postgresql+asyncpg://SG_USER:SG_PASS@localhost:5432/SG_DB"

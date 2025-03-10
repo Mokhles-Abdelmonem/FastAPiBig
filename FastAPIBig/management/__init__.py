@@ -1,5 +1,12 @@
 from FastAPIBig.orm.base.base_model import ORMSession
 from FastAPIBig.orm.base.session_manager import DataBaseSessionManager
+from FastAPIBig.conf.settings import get_project_settings
 
-db_manager = DataBaseSessionManager(DATABASE_URL_ASYNC, DATABASE_URL_SYNC)
+settings = get_project_settings()
+
+# Use settings dynamically
+print(settings.DATABASE_URL)  # This will be the project's database setting
+print(settings.DEBUG)               # Project-defined debug setting
+
+db_manager = DataBaseSessionManager(settings.DATABASE_URL)
 ORMSession.initialize(db_manager)

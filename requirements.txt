@@ -5,3 +5,4 @@ SQLAlchemy
 uvicorn
 asyncpg
 psycopg-binary
+aiosqlite
