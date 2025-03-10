@@ -1,10 +1,17 @@
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 
 def get_app():
     """Starts the FastAPI server."""
-    app = FastAPI()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+
+        print("Starting FastAPI server...")
+
+    app = FastAPI(lifespan=lifespan)
 
     # Dynamically include routes
     apps_dir = os.path.join(os.getcwd(), "app")

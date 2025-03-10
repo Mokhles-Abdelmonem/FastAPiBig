@@ -1,7 +1,7 @@
 import asyncio
 
 from pydantic import BaseModel
-from views.apis.base import (
+from FastAPIBig.views.apis.base import (
     RegisterCreate,
     RegisterRetrieve,
     RegisterList,

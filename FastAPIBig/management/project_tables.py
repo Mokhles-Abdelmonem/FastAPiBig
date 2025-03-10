@@ -1,5 +1,6 @@
 import os
-from orm.base.base_model import db_manager
+
+from FastAPIBig.management import db_manager
 
 
 def import_models():

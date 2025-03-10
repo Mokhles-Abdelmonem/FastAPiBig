@@ -1,5 +1,5 @@
 import sys
-from management.commands_handlers import (
+from FastAPIBig.management.commands_handlers import (
     startapp_handler,
     runserver_handler,
     help_handler,
@@ -25,7 +25,6 @@ class ManageCommands:
             "runserver": runserver_handler,
         }.get(command, help_handler)
 
-        print(handler)
         handler(self.argv)
 
 

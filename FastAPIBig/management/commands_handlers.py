@@ -1,8 +1,7 @@
 import os
-from fastapi import FastAPI
 import uvicorn
 
-from management.project_tables import create_project_tables
+from FastAPIBig.management.project_tables import create_project_tables
 
 
 def generate_routes_content(app_name):
@@ -64,7 +63,7 @@ def start_server(
 ):
     """Starts the FastAPI server."""
     uvicorn.run(
-        "management.fastapi_app:app",
+        "FastAPIBig.management.fastapi_app:app",
         host=host,
         port=port,
         reload=reload,

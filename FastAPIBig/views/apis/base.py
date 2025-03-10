@@ -2,7 +2,7 @@ from typing import List, Type, Optional, Dict
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
-from orm.base.base_model import ORM
+from FastAPIBig.orm.base.base_model import ORM
 
 
 class BaseAPI:

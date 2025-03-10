@@ -6,7 +6,7 @@ from sqlalchemy.orm import (
 )
 from typing import AsyncIterator, Optional, Type, Any, Iterator
 from sqlalchemy.sql.functions import count
-from orm.base.session_manager import DataBaseSessionManager
+from FastAPIBig.orm.base.session_manager import DataBaseSessionManager
 
 
 DECLARATIVE_BASE = declarative_base()
@@ -153,10 +153,3 @@ class ORM(ORMSession):
                 return None
             await db_session.refresh(instance, attrs)
             return instance
-
-
-DATABASE_URL_ASYNC = "postgresql+asyncpg://SG_USER:SG_PASS@localhost:5432/SG_DB"
-DATABASE_URL_SYNC = "postgresql+psycopg://SG_USER:SG_PASS@localhost:5432/SG_DB"
-
-db_manager = DataBaseSessionManager(DATABASE_URL_ASYNC, DATABASE_URL_SYNC)
-ORMSession.initialize(db_manager)

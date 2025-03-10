@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "FastAPIBig"
+version = "0.1"
+dependencies = [
+    "Click",
+    "FastAPI",
+    "pydantic",
+    "SQLAlchemy",
+    "uvicorn",
+    "asyncpg",
+    "psycopg-binary",
+
+]
+
+[tool.setuptools]
+packages = ["FastAPIBig"]
+
+[project.scripts]
+fastapi-admin = "FastAPIBig.cli:startproject"
