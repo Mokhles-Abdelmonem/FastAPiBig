@@ -13,6 +13,11 @@ router = APIRouter()
 async def read_posts():
     return {"message": "posts app"}
 
+# TODO: Test many routes
+@router.get("/comments/")
+async def read_comments():
+    return {"message": "posts app"}
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
