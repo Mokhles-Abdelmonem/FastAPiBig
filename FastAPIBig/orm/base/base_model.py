@@ -45,7 +45,9 @@ class ORM(ORMSession):
     async def get(self, pk: int):
         """Retrieve a record by ID."""
         async for db_session in self._async_session():
-            result = await db_session.execute(select(self.model).filter(self.model.id == pk))
+            result = await db_session.execute(
+                select(self.model).filter(self.model.id == pk)
+            )
             return result.scalars().first()
 
     async def update(self, pk, **kwargs):

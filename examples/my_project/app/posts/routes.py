@@ -6,17 +6,17 @@ from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated
 
 
-router = APIRouter()
+router = APIRouter(prefix="/custom-posts", tags=["custom-posts"])
 
 
 @router.get("/")
 async def read_posts():
     return {"message": "posts app"}
 
-# TODO: Test many routes
+
 @router.get("/comments/")
 async def read_comments():
-    return {"message": "posts app"}
+    return {"message": "test comments"}
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -52,6 +52,4 @@ class PostView(APIView):
     dependencies_by_method = {
         "list": [Depends(QueryParams)],
     }
-
-
-router.include_router(PostView.as_router(prefix="/posts", tags=["Posts"]))
+    include_router = True

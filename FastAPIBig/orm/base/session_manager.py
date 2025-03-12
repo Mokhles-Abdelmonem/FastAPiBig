@@ -6,11 +6,7 @@ from sqlalchemy import create_engine, NullPool
 
 
 class DataBaseSessionManager:
-    def __init__(
-            self,
-            database_url: str,
-            **kwargs: Any
-    ):
+    def __init__(self, database_url: str, **kwargs: Any):
         """Initialize both async and sync database engines and sessionmakers."""
         # Async Engine & Session
         self._async_engine = create_async_engine(
@@ -19,7 +15,6 @@ class DataBaseSessionManager:
         self._async_sessionmaker = async_sessionmaker(
             bind=self._async_engine, expire_on_commit=False, class_=AsyncSession
         )
-
 
     async def close(self):
         """Dispose of the async engine."""

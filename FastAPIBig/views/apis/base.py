@@ -35,16 +35,19 @@ class BaseAPI:
     dependencies: List[Depends] = []
     dependencies_by_method: Dict[str, List[Depends]] = {}
 
-    request: Request
+    prefix: Optional[str] = ""
+    tags: Optional[List[str]] = None
 
-    def __init__(self, router: Optional[APIRouter] = None):
-        self._model = ORM(model=self.model)
+    include_router: bool = False
+
+    def __init__(self, prefix: str = "", tags: Optional[List[str]] = None):
 
         class Wrapper:
             pass
 
         self.wrapper = Wrapper
-        self.router = router or APIRouter()
+        self._model = ORM(model=self.model)
+        self.router = APIRouter(prefix=self.prefix or prefix, tags=self.tags or tags)
         self.load_all_methods()  # Dynamically load methods from all mixins
 
     @classmethod
@@ -52,7 +55,7 @@ class BaseAPI:
         cls: Type["BaseAPI"], prefix: str, tags: Optional[List[str]] = None
     ) -> APIRouter:
         """Create an instance of the API class and return its router."""
-        instance = cls(APIRouter(prefix=prefix, tags=tags))
+        instance = cls(prefix=prefix, tags=tags)
         return instance.router
 
     def _get_schema_in_class(self, method: str = None) -> Optional[Type[BaseModel]]:
@@ -86,7 +89,9 @@ class BaseAPI:
         as_list = True if method_name == "list" else False
         route_method(
             path,
-            response_model=self._get_schema_out_class(method=method_name, as_list=as_list),
+            response_model=self._get_schema_out_class(
+                method=method_name, as_list=as_list
+            ),
             dependencies=self._get_dependencies(method_name),
             name=method_name,
         )(getattr(self.wrapper, method_name))

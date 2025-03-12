@@ -8,7 +8,6 @@ def import_models():
 
     # Dynamically include routes
     apps_dir = os.path.join(os.getcwd(), "app")
-    print(apps_dir)
 
     # For feature-based structure
     if os.path.exists(apps_dir):
@@ -18,7 +17,6 @@ def import_models():
                 try:
                     module_name = f"app.{app_name}.models"
                     __import__(module_name)
-                    print(module_name)
                 except (ModuleNotFoundError, AttributeError) as e:
                     print(e)
 
@@ -30,7 +28,6 @@ def import_models():
                 try:
                     module_name = f"app.models.{route_file[:-3]}"
                     __import__(module_name)
-                    print(module_name)
                 except (ModuleNotFoundError, AttributeError) as e:
                     print(e)
 

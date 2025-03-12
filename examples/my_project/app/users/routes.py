@@ -3,7 +3,7 @@ from .models import User
 from .schemas import UserSchemaIn, UserSchemaOut, CreateUserSchema
 from FastAPIBig.views.apis.operations import APIView
 
-router = APIRouter()
+router = APIRouter(prefix="/custom-users", tags=["custom-users"])
 
 
 @router.get("/")
@@ -18,6 +18,9 @@ class UserView(APIView):
     methods = ["create", "get", "list", "delete"]
     post_methods = ["create_user"]
     get_methods = ["get_user"]
+    prefix = "/new-users"
+    tags = ["new-users"]
+    include_router = True
 
     async def create_user(self, create_data: CreateUserSchema):
         instance = await self._model.create(
@@ -28,6 +31,3 @@ class UserView(APIView):
     async def get_user(self, pk: int):
         user = await self._model.select_related(id=pk, attrs=["posts"])
         return self.schema_out.model_validate(user.__dict__)
-
-
-router.include_router(UserView.as_router(prefix="/users", tags=["Users"]))
