@@ -20,7 +20,6 @@ class UserView(APIView):
     get_methods = ["get_user"]
     prefix = "/new-users"
     tags = ["new-users"]
-    include_router = True
 
     async def create_user(self, create_data: CreateUserSchema):
         instance = await self._model.create(
