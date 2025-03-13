@@ -49,7 +49,6 @@ class BaseAPI:
         self.wrapper = Wrapper
         self._model = ORM(model=self.model)
         self.router = APIRouter(prefix=self.prefix or prefix, tags=self.tags or tags)
-        self.load_all_methods()  # Dynamically load methods from all mixins
 
     @classmethod
     def as_router(
@@ -95,25 +94,15 @@ class BaseAPI:
         route_method = getattr(self.router, method_type)
         as_list = True if method_name == "list" else False
 
-        # Generate a unique operation ID
-        operation_id = f"{self.__class__.__name__.lower()}_{path.strip('/').replace('/', '_')}_{method_name}"
-        # TODO: check how many routes have the same name, methods loaded multiple times
-
         route_method(
             path,
             response_model=self._get_schema_out_class(
                 method=method_name, as_list=as_list
             ),
             dependencies=self._get_dependencies(method_name),
-            name=method_name,
-            operation_id=operation_id,  # Ensure uniqueness
+            name=method_name
         )(getattr(self.wrapper, method_name))
 
-    def load_all_methods(self):
-        """Dynamically call _load_methods() from all mixins in order."""
-        for base in self.__class__.mro():
-            if hasattr(base, "_load_methods"):
-                base._load_methods(self)
 
     def _load_method(
         self,
@@ -155,7 +144,12 @@ class BaseAPI:
 
 
 class RegisterCreate(BaseAPI):
-    def _load_methods(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._load_create()
+
+
+    def _load_create(self):
         self._load_method("post", "create", "/", set_annotations=True)
         self._load_post_methods()
 
@@ -165,7 +159,11 @@ class RegisterCreate(BaseAPI):
 
 
 class RegisterRetrieve(BaseAPI):
-    def _load_methods(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._load_retrieve()
+
+    def _load_retrieve(self):
         self._load_method("get", "get", "/{pk}")
         self._load_get_methods()
 
@@ -175,7 +173,11 @@ class RegisterRetrieve(BaseAPI):
 
 
 class RegisterUpdate(BaseAPI):
-    def _load_methods(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._load_update()
+
+    def _load_update(self):
         self._load_method("put", "update", "/{pk}", set_annotations=True)
         self._load_put_methods()
 
@@ -187,7 +189,11 @@ class RegisterUpdate(BaseAPI):
 
 
 class RegisterPartialUpdate(BaseAPI):
-    def _load_methods(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._load_partial_update()
+
+    def _load_partial_update(self):
         self._load_method("patch", "partial_update", "/{pk}", set_annotations=True)
         self._load_patch_methods()
 
@@ -199,7 +205,11 @@ class RegisterPartialUpdate(BaseAPI):
 
 
 class RegisterDelete(BaseAPI):
-    def _load_methods(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._load_delete()
+
+    def _load_delete(self):
         self._load_method("delete", "delete", "/{pk}")
         self._load_delete_methods()
 
@@ -209,7 +219,11 @@ class RegisterDelete(BaseAPI):
 
 
 class RegisterList(BaseAPI):
-    def _load_methods(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._load_list()
+
+    def _load_list(self):
         self._load_method("get", "list", "/")
         self._load_list_methods()
 
