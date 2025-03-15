@@ -49,6 +49,7 @@ class BaseAPI:
         self.wrapper = Wrapper
         self._model = ORM(model=self.model)
         self.router = APIRouter(prefix=self.prefix or prefix, tags=self.tags or tags)
+        self.required_objects = []
 
     @classmethod
     def as_router(
@@ -126,6 +127,7 @@ class BaseAPI:
             self._allowed_methods
             + self.post_methods
             + self.get_methods
+            + self.list_methods
             + self.put_methods
             + self.patch_methods
             + self.delete_methods
@@ -137,6 +139,7 @@ class BaseAPI:
             self.methods
             + self.post_methods
             + self.get_methods
+            + self.list_methods
             + self.put_methods
             + self.patch_methods
             + self.delete_methods

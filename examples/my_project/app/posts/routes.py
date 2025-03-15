@@ -1,10 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from .models import Post
 from .schemas import PostSchemaIn, PostSchemaOut
 from FastAPIBig.views.apis.operations import APIView
 from fastapi.security import OAuth2PasswordBearer
-from typing import Annotated
-
+from typing import Annotated, List
 
 router = APIRouter(prefix="/custom-posts", tags=["custom-posts"])
 
