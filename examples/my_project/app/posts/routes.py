@@ -1,9 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+from pydantic import BaseModel
+
 from .models import Post
 from .schemas import PostSchemaIn, PostSchemaOut
 from FastAPIBig.views.apis.operations import APIView
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated, List
+
+from ..users.models import User
 
 router = APIRouter(prefix="/custom-posts", tags=["custom-posts"])
 
@@ -52,3 +56,6 @@ class PostView(APIView):
         "list": [Depends(QueryParams)],
     }
     include_router = True
+
+    async def create_validation(self, request: Request, data: BaseModel):
+        await self._model.check_relations(data)

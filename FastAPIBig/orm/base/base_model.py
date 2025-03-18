@@ -1,5 +1,6 @@
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, inspect
 from sqlalchemy.orm import (
     declarative_base,
     Session,
@@ -147,3 +148,28 @@ class ORM(ORMSession):
                 return None
             await db_session.refresh(instance, attrs)
             return instance
+
+
+    async def check_relations(self, data: BaseModel):
+        data_dict = data.model_dump()
+        for rel in inspect(self.model).relationships:
+            for attr in dir(rel):
+                if attr.startswith("_"):
+                    continue
+            local_col = list(rel.local_columns)[0]
+            remote_side = list(rel.remote_side)[0]
+            if not local_col.primary_key:
+                col_val = data_dict.get(local_col.name)
+                if not col_val:
+                    raise KeyError(f"Key '{local_col.name}' not found in provided body.")
+
+                async for db_session in self._async_session():
+                    result = await db_session.execute(
+                        select(rel.mapper.entity).filter(
+                            getattr(rel.mapper.entity, remote_side.name) == col_val
+                        )
+                    )
+                    if not result.first():
+                        raise ValueError(
+                            f"Entity({rel.mapper.entity}) with primary key: {col_val} not found."
+                        )
