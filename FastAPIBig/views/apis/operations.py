@@ -1,4 +1,5 @@
 import asyncio
+from typing import Type, List
 
 from pydantic import BaseModel
 from FastAPIBig.views.apis.base import (
@@ -15,16 +16,12 @@ from fastapi import Request, BackgroundTasks
 class CreateOperation(RegisterCreate):
 
     async def create(self, request: Request, data: BaseModel):
-        self.required_objects = await self.get_required_objects(request, data)
         await self.create_validation(request, data)
         await self.pre_create(request, data)
         instance = await self._create(request, data)
         asyncio.create_task(self.on_create(request, instance))
         return self.schema_out.model_validate(instance.__dict__)
 
-
-    async def get_required_objects(self, request: Request, *args, **kwargs) -> list:
-        return self.required_objects
 
     async def create_validation(self, request: Request, data: BaseModel):
         await self._model.validate_relations(data)
@@ -42,24 +39,21 @@ class CreateOperation(RegisterCreate):
 class RetrieveOperation(RegisterRetrieve):
 
     async def get(self, request: Request, pk: int):
-        self.required_objects = await self.get_required_objects(request, pk)
-        await self.get_validation(request, pk)
         await self.pre_get(request, pk)
         instance = await self._get(request, pk)
+        await self.get_validation(request,pk , instance)
         asyncio.create_task(self.on_get(request, instance))
         return self.schema_out.model_validate(instance.__dict__)
-
-    async def get_required_objects(self, request: Request, *args, **kwargs) -> list:
-        return self.required_objects
-
-    async def get_validation(self, request: Request, pk: int):
-        pass
 
     async def pre_get(self, request: Request, pk: int):
         pass
 
     async def _get(self, request: Request, pk: int):
         return await self._model.get(pk=pk)
+
+    async def get_validation(self, request: Request, pk: int, instance):
+        if not instance:
+            raise KeyError(f"Object({self.model}) with given id: {pk} not found. ")
 
     async def on_get(self, request: Request, instance):
         pass
@@ -68,7 +62,6 @@ class RetrieveOperation(RegisterRetrieve):
 class ListOperation(RegisterList):
 
     async def list(self, request: Request):
-        self.required_objects = await self.get_required_objects(request)
         await self.list_validation(request)
         await self.pre_list(request)
         instances = await self._list(request)
@@ -76,9 +69,6 @@ class ListOperation(RegisterList):
         return [
             self.schema_out.model_validate(instance.__dict__) for instance in instances
         ]
-
-    async def get_required_objects(self, request: Request, *args, **kwargs) -> list:
-        return self.required_objects
 
     async def list_validation(self, request: Request):
         pass
@@ -92,20 +82,17 @@ class ListOperation(RegisterList):
     async def on_list(self, request: Request):
         pass
 
-
+    def _get_schema_out_class(self, method: str = None) -> Type[List[BaseModel]]:
+        return List[self.schemas_out.get(method, self.schema_out)]
 
 class UpdateOperation(RegisterUpdate):
 
     async def update(self, request: Request, pk: int, data: BaseModel):
-        self.required_objects = await self.get_required_objects(request, pk, data)
         await self.update_validation(request, pk, data)
         await self.pre_update(request, pk, data)
         instance = await self._update(request, pk, data)
         asyncio.create_task(self.on_update(request, instance))
         return self.schema_out.model_validate(instance.__dict__)
-
-    async def get_required_objects(self, request: Request, *args, **kwargs) -> list:
-        return self.required_objects
 
     async def update_validation(self, request: Request, pk: int, data: BaseModel):
         await self._model.validate_relations(data)
@@ -127,16 +114,11 @@ class UpdateOperation(RegisterUpdate):
 class PartialUpdateOperation(RegisterPartialUpdate):
 
     async def partial_update(self, request: Request, pk: int, data: BaseModel):
-        self.required_objects = await self.get_required_objects(request, pk, data)
         await self.update_validation(request, pk, data)
         await self.pre_update(request, pk, data)
         instance = await self._partial_update(request, pk, data)
         asyncio.create_task(self.on_update(request, instance))
         return self.schema_out.model_validate(instance.__dict__)
-
-
-    async def get_required_objects(self, request: Request, *args, **kwargs) -> list:
-        return self.required_objects
 
     async def update_validation(self, request: Request, pk: int, data: BaseModel):
         await self._model.validate_relations(data)
@@ -158,14 +140,11 @@ class PartialUpdateOperation(RegisterPartialUpdate):
 class DeleteOperation(RegisterDelete):
 
     async def delete(self, request: Request, pk: int):
-        self.required_objects = await self.get_required_objects(request, pk)
         await self.delete_validation(request, pk)
         await self.pre_delete(request, pk)
         instance = await self._delete(request, pk)
         asyncio.create_task(self.on_delete(request, instance))
-
-    async def get_required_objects(self, request: Request, *args, **kwargs) -> list:
-        return self.required_objects
+        return {"deleted": True}
 
     async def delete_validation(self, request: Request, pk: int):
         pass

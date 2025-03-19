@@ -62,11 +62,8 @@ class BaseAPI:
     def _get_schema_in_class(self, method: str = None) -> Optional[Type[BaseModel]]:
         return self.schemas_in.get(method, self.schema_in)
 
-    def _get_schema_out_class(
-        self, method: str = None, as_list: bool = False
-    ) -> Type[BaseModel]:
-        schema = self.schemas_out.get(method, self.schema_out)
-        return List[schema] if as_list else schema
+    def _get_schema_out_class(self, method: str = None) -> Type[BaseModel]:
+        return self.schemas_out.get(method, self.schema_out)
 
     def _get_dependencies(self, method: str = None) -> List[Depends]:
         return self.dependencies_by_method.get(method, self.dependencies)
@@ -93,12 +90,10 @@ class BaseAPI:
             raise KeyError(f"Method '{method_name}' not found in wrapper.")
 
         route_method = getattr(self.router, method_type)
-        as_list = True if method_name == "list" else False
-
         route_method(
             path,
             response_model=self._get_schema_out_class(
-                method=method_name, as_list=as_list
+                method=method_name
             ),
             dependencies=self._get_dependencies(method_name),
             name=method_name
@@ -220,6 +215,8 @@ class RegisterDelete(BaseAPI):
         for method in self.delete_methods:
             self._load_method("delete", method, f"/{method}/" + "/{pk}")
 
+    def _get_schema_out_class(self, method: str = None) -> None:
+        return None
 
 class RegisterList(BaseAPI):
     def __init__(self, *args, **kwargs):

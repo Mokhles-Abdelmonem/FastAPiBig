@@ -56,6 +56,3 @@ class PostView(APIView):
         "list": [Depends(QueryParams)],
     }
     include_router = True
-
-    async def create_validation(self, request: Request, data: BaseModel):
-        await self._model.validate_relations(data)
