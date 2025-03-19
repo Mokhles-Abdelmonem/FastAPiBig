@@ -150,7 +150,7 @@ class ORM(ORMSession):
             return instance
 
 
-    async def check_relations(self, data: BaseModel):
+    async def validate_relations(self, data: BaseModel):
         data_dict = data.model_dump()
         for rel in inspect(self.model).relationships:
             for attr in dir(rel):

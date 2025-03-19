@@ -27,7 +27,7 @@ class CreateOperation(RegisterCreate):
         return self.required_objects
 
     async def create_validation(self, request: Request, data: BaseModel):
-        return
+        await self._model.validate_relations(data)
 
     async def pre_create(self, request: Request, data: BaseModel):
         pass
@@ -53,7 +53,7 @@ class RetrieveOperation(RegisterRetrieve):
         return self.required_objects
 
     async def get_validation(self, request: Request, pk: int):
-        return
+        pass
 
     async def pre_get(self, request: Request, pk: int):
         pass
@@ -108,7 +108,7 @@ class UpdateOperation(RegisterUpdate):
         return self.required_objects
 
     async def update_validation(self, request: Request, pk: int, data: BaseModel):
-        return
+        await self._model.validate_relations(data)
 
     async def pre_update(self, request: Request, pk: int, data: BaseModel):
         pass
@@ -139,7 +139,7 @@ class PartialUpdateOperation(RegisterPartialUpdate):
         return self.required_objects
 
     async def update_validation(self, request: Request, pk: int, data: BaseModel):
-        return
+        await self._model.validate_relations(data)
 
     async def pre_update(self, request: Request, pk: int, data: BaseModel):
         pass
@@ -168,7 +168,7 @@ class DeleteOperation(RegisterDelete):
         return self.required_objects
 
     async def delete_validation(self, request: Request, pk: int):
-        return
+        pass
 
     async def pre_delete(self, request: Request, pk: int):
         pass
