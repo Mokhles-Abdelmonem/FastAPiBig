@@ -149,7 +149,6 @@ class ORM(ORMSession):
             await db_session.refresh(instance, attrs)
             return instance
 
-
     async def validate_relations(self, data: BaseModel):
         data_dict = data.model_dump()
         for rel in inspect(self.model).relationships:
@@ -160,8 +159,10 @@ class ORM(ORMSession):
             remote_side = list(rel.remote_side)[0]
             if not local_col.primary_key:
                 col_val = data_dict.get(local_col.name)
-                if not col_val:
-                    raise KeyError(f"Key '{local_col.name}' not found in provided body.")
+                if col_val is None:
+                    raise KeyError(
+                        f"Key '{local_col.name}' not found in provided body."
+                    )
 
                 async for db_session in self._async_session():
                     result = await db_session.execute(
@@ -173,3 +174,26 @@ class ORM(ORMSession):
                         raise ValueError(
                             f"Entity({rel.mapper.entity}) with primary key: {col_val} not found."
                         )
+
+    async def validate_unique_fields(self, data: BaseModel):
+        data_dict = data.model_dump()
+
+        # Remove primary key from data to prevent manual override
+        pk_column = inspect(self.model).primary_key[0]
+        if pk_column in data_dict:
+            raise ValueError(f"Cannot create or change primary key '{pk_column.name}'.")
+
+        for column in inspect(self.model).columns:
+            if column.unique:
+                col_val = data_dict.get(column.name)
+                if col_val is not None:
+                    async for db_session in self._async_session():
+                        result = await db_session.execute(
+                            select(self.model).filter(
+                                getattr(self.model, column.name) == col_val
+                            )
+                        )
+                        if result.first():
+                            raise ValueError(
+                                f"Unique constraint violation: '{column.name}' with value '{col_val}' already exists."
+                            )

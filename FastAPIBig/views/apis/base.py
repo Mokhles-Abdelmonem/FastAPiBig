@@ -1,6 +1,6 @@
 from functools import cached_property
-from typing import List, Type, Optional, Dict, ClassVar
-from fastapi import APIRouter, Depends, Request
+from typing import List, Type, Optional, Dict, get_origin
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from FastAPIBig.orm.base.base_model import ORM
@@ -40,6 +40,7 @@ class BaseAPI:
     tags: Optional[List[str]] = None
 
     include_router: bool = False
+    schemas_out_is_list: bool = False
 
     def __init__(self, prefix: str = "", tags: Optional[List[str]] = None):
 
@@ -65,6 +66,9 @@ class BaseAPI:
     def _get_schema_out_class(self, method: str = None) -> Type[BaseModel]:
         return self.schemas_out.get(method, self.schema_out)
 
+    def _get_schema_out(self, method: str = None) -> Type[BaseModel]:
+        return self._get_schema_out_class(method)
+
     def _get_dependencies(self, method: str = None) -> List[Depends]:
         return self.dependencies_by_method.get(method, self.dependencies)
 
@@ -75,7 +79,9 @@ class BaseAPI:
 
         attr = getattr(self, method_name, None)
         if not attr:
-            raise KeyError(f"Method '{method_name}' not found in {self.__class__.__name__}")
+            raise KeyError(
+                f"Method '{method_name}' not found in {self.__class__.__name__}"
+            )
 
         setattr(self.wrapper, method_name, attr)
         if set_annotations:
@@ -92,13 +98,10 @@ class BaseAPI:
         route_method = getattr(self.router, method_type)
         route_method(
             path,
-            response_model=self._get_schema_out_class(
-                method=method_name
-            ),
+            response_model=self._get_schema_out(method=method_name),
             dependencies=self._get_dependencies(method_name),
-            name=method_name
+            name=method_name,
         )(getattr(self.wrapper, method_name))
-
 
     def _load_method(
         self,
@@ -109,12 +112,11 @@ class BaseAPI:
     ):
         self.load_method_validate(method_name)
         self.register_method_wrapper(method_name, set_annotations)
-        self._register_route(method_name, method_type , path)
+        self._register_route(method_name, method_type, path)
 
     def load_method_validate(self, method_name):
         if method_name not in self.allowed_methods:
             raise ValueError(f"Invalid method: {method_name}")
-
 
     @cached_property
     def allowed_methods(self):
@@ -145,7 +147,6 @@ class RegisterCreate(BaseAPI):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._load_create()
-
 
     def _load_create(self):
         self._load_method("post", "create", "/", set_annotations=True)
@@ -203,6 +204,10 @@ class RegisterPartialUpdate(BaseAPI):
 
 
 class RegisterDelete(BaseAPI):
+
+    def _get_schema_out(self, method: str = None) -> None :
+        return None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._load_delete()
@@ -215,10 +220,12 @@ class RegisterDelete(BaseAPI):
         for method in self.delete_methods:
             self._load_method("delete", method, f"/{method}/" + "/{pk}")
 
-    def _get_schema_out_class(self, method: str = None) -> None:
-        return None
 
 class RegisterList(BaseAPI):
+
+    def _get_schema_out(self, method: str = None) -> Type[List[BaseModel]]:
+        return List[self._get_schema_out_class(method)]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._load_list()

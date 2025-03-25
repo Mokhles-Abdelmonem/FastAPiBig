@@ -1,6 +1,4 @@
 import asyncio
-from typing import Type, List
-
 from pydantic import BaseModel
 from FastAPIBig.views.apis.base import (
     RegisterCreate,
@@ -10,7 +8,7 @@ from FastAPIBig.views.apis.base import (
     RegisterPartialUpdate,
     RegisterUpdate,
 )
-from fastapi import Request, BackgroundTasks
+from fastapi import Request
 
 
 class CreateOperation(RegisterCreate):
@@ -20,11 +18,11 @@ class CreateOperation(RegisterCreate):
         await self.pre_create(request, data)
         instance = await self._create(request, data)
         asyncio.create_task(self.on_create(request, instance))
-        return self.schema_out.model_validate(instance.__dict__)
-
+        return self._get_schema_out_class("create").model_validate(instance.__dict__)
 
     async def create_validation(self, request: Request, data: BaseModel):
         await self._model.validate_relations(data)
+        await self._model.validate_unique_fields(data)
 
     async def pre_create(self, request: Request, data: BaseModel):
         pass
@@ -41,9 +39,9 @@ class RetrieveOperation(RegisterRetrieve):
     async def get(self, request: Request, pk: int):
         await self.pre_get(request, pk)
         instance = await self._get(request, pk)
-        await self.get_validation(request,pk , instance)
+        await self.get_validation(request, pk, instance)
         asyncio.create_task(self.on_get(request, instance))
-        return self.schema_out.model_validate(instance.__dict__)
+        return self._get_schema_out_class("get").model_validate(instance.__dict__)
 
     async def pre_get(self, request: Request, pk: int):
         pass
@@ -67,7 +65,7 @@ class ListOperation(RegisterList):
         instances = await self._list(request)
         asyncio.create_task(self.on_list(request))
         return [
-            self.schema_out.model_validate(instance.__dict__) for instance in instances
+            self._get_schema_out_class("list").model_validate(instance.__dict__) for instance in instances
         ]
 
     async def list_validation(self, request: Request):
@@ -82,9 +80,6 @@ class ListOperation(RegisterList):
     async def on_list(self, request: Request):
         pass
 
-    def _get_schema_out_class(self, method: str = None) -> Type[List[BaseModel]]:
-        return List[self.schemas_out.get(method, self.schema_out)]
-
 class UpdateOperation(RegisterUpdate):
 
     async def update(self, request: Request, pk: int, data: BaseModel):
@@ -92,10 +87,11 @@ class UpdateOperation(RegisterUpdate):
         await self.pre_update(request, pk, data)
         instance = await self._update(request, pk, data)
         asyncio.create_task(self.on_update(request, instance))
-        return self.schema_out.model_validate(instance.__dict__)
+        return self._get_schema_out_class("update").model_validate(instance.__dict__)
 
     async def update_validation(self, request: Request, pk: int, data: BaseModel):
         await self._model.validate_relations(data)
+        await self._model.validate_unique_fields(data)
 
     async def pre_update(self, request: Request, pk: int, data: BaseModel):
         pass
@@ -118,10 +114,11 @@ class PartialUpdateOperation(RegisterPartialUpdate):
         await self.pre_update(request, pk, data)
         instance = await self._partial_update(request, pk, data)
         asyncio.create_task(self.on_update(request, instance))
-        return self.schema_out.model_validate(instance.__dict__)
+        return self._get_schema_out_class("partial_update").model_validate(instance.__dict__)
 
     async def update_validation(self, request: Request, pk: int, data: BaseModel):
         await self._model.validate_relations(data)
+        await self._model.validate_unique_fields(data)
 
     async def pre_update(self, request: Request, pk: int, data: BaseModel):
         pass
@@ -142,9 +139,9 @@ class DeleteOperation(RegisterDelete):
     async def delete(self, request: Request, pk: int):
         await self.delete_validation(request, pk)
         await self.pre_delete(request, pk)
-        instance = await self._delete(request, pk)
-        asyncio.create_task(self.on_delete(request, instance))
-        return {"deleted": True}
+        deleted = await self._delete(request, pk)
+        asyncio.create_task(self.on_delete(request, pk, deleted))
+        return {"deleted": deleted}
 
     async def delete_validation(self, request: Request, pk: int):
         pass
@@ -153,22 +150,9 @@ class DeleteOperation(RegisterDelete):
         pass
 
     async def _delete(self, request: Request, pk: int):
-        instance = await self._model.get(pk=pk)
-        await self._model.delete(pk)
-        return instance
+        await self._model.get(pk=pk)
+        return await self._model.delete(pk)
 
-    async def on_delete(self, request: Request, instance):
+    async def on_delete(self, request: Request, pk: int, deleted: bool):
         pass
 
-
-class APIView(
-    CreateOperation,
-    RetrieveOperation,
-    ListOperation,
-    UpdateOperation,
-    PartialUpdateOperation,
-    DeleteOperation,
-):
-    """Combining all mixins to achieve all functionalities"""
-
-    pass

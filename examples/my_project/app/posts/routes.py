@@ -3,7 +3,12 @@ from pydantic import BaseModel
 
 from .models import Post
 from .schemas import PostSchemaIn, PostSchemaOut
-from FastAPIBig.views.apis.operations import APIView
+from FastAPIBig.views.apis.operations import (
+    ListOperation,
+    CreateOperation,
+    RetrieveOperation,
+    DeleteOperation,
+)
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated, List
 
@@ -47,12 +52,17 @@ class QueryParams:
         self.skip = skip
 
 
-class PostView(APIView):
+class PostView(CreateOperation, RetrieveOperation, DeleteOperation):
     model = Post
     schema_in = PostSchemaIn
     schema_out = PostSchemaOut
-    methods = ["create", "get", "list", "delete"]  # Define what endpoints to expose
-    dependencies_by_method = {
-        "list": [Depends(QueryParams)],
-    }
+    methods = ["create", "get", "delete"]  # Define what endpoints to expose
+    include_router = True
+
+
+class PostList(ListOperation):
+    model = Post
+    schema_in = PostSchemaIn
+    schema_out = PostSchemaOut
+    methods = ["list"]  # Define what endpoints to expose
     include_router = True

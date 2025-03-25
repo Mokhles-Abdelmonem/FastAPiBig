@@ -1,7 +1,13 @@
+from typing import List
+
 from fastapi import APIRouter
 from .models import User
 from .schemas import UserSchemaIn, UserSchemaOut, CreateUserSchema
-from FastAPIBig.views.apis.operations import APIView
+from FastAPIBig.views.apis.operations import (
+    CreateOperation,
+    ListOperation,
+    DeleteOperation,
+)
 
 router = APIRouter(prefix="/custom-users", tags=["custom-users"])
 
@@ -11,11 +17,11 @@ def read_users():
     return {"message": "users app"}
 
 
-class UserView(APIView):
+class UserView(CreateOperation, ListOperation, DeleteOperation):
     model = User
     schema_in = UserSchemaIn
     schema_out = UserSchemaOut
-    methods = ["create", "get", "list", "delete"]
+    methods = ["create", "list", "delete"]
     post_methods = ["create_user"]
     get_methods = ["get_user"]
     prefix = "/new-users"
