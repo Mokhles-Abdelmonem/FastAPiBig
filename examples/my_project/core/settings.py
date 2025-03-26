@@ -13,8 +13,4 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
-MIDDLEWARE = []
-
-
 DATABASE_URL = "postgresql+asyncpg://SG_USER:SG_PASS@localhost:5432/SG_DB"
