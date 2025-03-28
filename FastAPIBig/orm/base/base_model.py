@@ -1,11 +1,8 @@
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, inspect
-from sqlalchemy.orm import (
-    declarative_base,
-    Session,
-)
-from typing import AsyncIterator, Optional, Type, Any, Iterator
+from sqlalchemy.orm import declarative_base
+from typing import AsyncIterator, Optional, Type, Any
 from sqlalchemy.sql.functions import count
 from FastAPIBig.orm.base.session_manager import DataBaseSessionManager
 

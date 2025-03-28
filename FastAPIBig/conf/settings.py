@@ -9,6 +9,6 @@ def get_project_settings():
     try:
         settings = importlib.import_module("core.settings")
     except ModuleNotFoundError:
-        raise Exception("Could not import settings module.")
+        from FastAPIBig.conf.project_template.core import settings
 
     return settings

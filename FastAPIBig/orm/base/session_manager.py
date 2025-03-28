@@ -1,8 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import sessionmaker, Session
 import contextlib
 from typing import AsyncIterator, Any
-from sqlalchemy import create_engine, NullPool
 
 
 class DataBaseSessionManager:

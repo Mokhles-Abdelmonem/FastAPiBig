@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from .models import Post
 from .schemas import PostSchemaIn, PostSchemaOut
@@ -10,7 +9,7 @@ from FastAPIBig.views.apis.operations import (
     DeleteOperation,
 )
 from fastapi.security import OAuth2PasswordBearer
-from typing import Annotated, List
+from typing import Annotated
 
 from ..users.models import User
 

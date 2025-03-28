@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import APIRouter
 from .models import User
 from .schemas import UserSchemaIn, UserSchemaOut, CreateUserSchema

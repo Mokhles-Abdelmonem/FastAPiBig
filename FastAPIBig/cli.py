@@ -44,18 +44,16 @@ def startapp(app_name, tb):
     os.makedirs(base_path, exist_ok=True)
 
     if tb:
-        # Create type-based structure
-        dirs = ["routes", "models", "schemas"]
-        for dir_name in dirs:
-            dir_path = os.path.join(base_path, dir_name)
-            os.makedirs(dir_path, exist_ok=True)
-
         for file_name in os.listdir(APP_TEMPLATE_DIR):
+            if file_name.startswith('__'):
+                continue
+            dir_name = file_name.split(".")[0]
+            dest_dir = os.path.join(base_path, dir_name)
+            os.makedirs(dest_dir, exist_ok=True)
+
             file_path = os.path.join(APP_TEMPLATE_DIR, file_name)
-            if os.path.isfile(file_path):
-                for dir_name in dirs:
-                    dest_path = os.path.join(base_path, dir_name, file_name)
-                    shutil.copy(file_path, dest_path)
+            dest_path = os.path.join(dest_dir, app_name + ".py")
+            shutil.copy(file_path, dest_path)
     else:
         # Create feature-based structure
         shutil.copytree(APP_TEMPLATE_DIR, app_path)
@@ -70,7 +68,6 @@ def startapp(app_name, tb):
 @click.option("--workers", default=None, type=int, help="Number of worker processes.")
 def runserver(host, port, reload, workers):
     """Run the FastAPI development server."""
-    click.echo(f"Starting FastAPI server at http://{host}:{port}")
     uvicorn.run("FastAPIBig.management.fastapi_app:app", host=host, port=port, reload=reload, workers=workers)
 
 
