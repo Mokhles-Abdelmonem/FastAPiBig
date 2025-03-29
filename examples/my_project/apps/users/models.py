@@ -1,10 +1,10 @@
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String
-from FastAPIBig.orm.base.base_model import DECLARATIVE_BASE
+from core.database import Base
 
 
 # Define the User model
-class User(DECLARATIVE_BASE):
+class User(Base):
     __tablename__ = "user"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)

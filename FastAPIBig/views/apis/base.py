@@ -66,7 +66,11 @@ class BaseAPI:
     def _get_schema_out_class(self, method: str = None) -> Type[BaseModel]:
         return self.schemas_out.get(method, self.schema_out)
 
-    def _get_schema_out(self, method: str = None) -> Type[BaseModel]:
+    def _get_schema_out(self, method: str = None) -> Type[BaseModel]|Type[List[BaseModel]]|None:
+        if method == "list" or method in self.list_methods:
+            return List[self._get_schema_out_class(method)]
+        elif method == "delete" or method in self.delete_methods:
+            return None
         return self._get_schema_out_class(method)
 
     def _get_dependencies(self, method: str = None) -> List[Depends]:
@@ -205,9 +209,6 @@ class RegisterPartialUpdate(BaseAPI):
 
 class RegisterDelete(BaseAPI):
 
-    def _get_schema_out(self, method: str = None) -> None :
-        return None
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._load_delete()
@@ -222,9 +223,6 @@ class RegisterDelete(BaseAPI):
 
 
 class RegisterList(BaseAPI):
-
-    def _get_schema_out(self, method: str = None) -> Type[List[BaseModel]]:
-        return List[self._get_schema_out_class(method)]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

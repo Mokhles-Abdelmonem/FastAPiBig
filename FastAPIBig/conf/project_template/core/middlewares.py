@@ -1,1 +1,1 @@
-# here you can add middlewares classes and added directly to that app
+# create your middlewares classes here, any class defined here will be added to the app middlewares by default

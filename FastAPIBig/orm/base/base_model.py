@@ -1,13 +1,10 @@
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, inspect
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 from typing import AsyncIterator, Optional, Type, Any
 from sqlalchemy.sql.functions import count
 from FastAPIBig.orm.base.session_manager import DataBaseSessionManager
-
-
-DECLARATIVE_BASE = declarative_base()
 
 
 class ORMSession:
@@ -28,7 +25,7 @@ class ORMSession:
 
 
 class ORM(ORMSession):
-    def __init__(self, model: Type["DECLARATIVE_BASE"]):
+    def __init__(self, model: Type["DeclarativeBase"]):
         self.model = model
 
     async def create(self, **kwargs):

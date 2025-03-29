@@ -1,13 +1,34 @@
 import os
 
 from FastAPIBig.management import db_manager
-from FastAPIBig.orm.base.base_model import DECLARATIVE_BASE
 
 
 def import_models():
+    """
+    Dynamically imports model modules from the project structure.
+
+    This function scans the project directory for model modules and imports them
+    to ensure they are registered and available for use. It supports two types
+    of project structures:
+
+    1. Feature-based structure:
+       - Looks for `models` modules inside each app directory under the `apps` folder.
+       - Example: `apps/<app_name>/models.py`
+
+    2. Type-based structure:
+       - Looks for model files inside the `apps/models` directory.
+       - Example: `apps/models/<model_file>.py`
+
+    Any `ModuleNotFoundError` or `AttributeError` encountered during the import
+    process is caught and printed to the console.
+
+    Note:
+        - The function assumes the current working directory is the root of the project.
+        - Files named `__init__.py` are ignored during the import process.
+    """
 
     # Dynamically include routes
-    apps_dir = os.path.join(os.getcwd(), "app")
+    apps_dir = os.path.join(os.getcwd(), "apps")
 
     # For feature-based structure
     if os.path.exists(apps_dir):
@@ -15,7 +36,7 @@ def import_models():
             app_path = os.path.join(apps_dir, app_name)
             if os.path.isdir(app_path):
                 try:
-                    module_name = f"app.{app_name}.models"
+                    module_name = f"apps.{app_name}.models"
                     __import__(module_name)
                 except (ModuleNotFoundError, AttributeError) as e:
                     print(e)
@@ -26,7 +47,7 @@ def import_models():
         for route_file in os.listdir(routes_dir):
             if route_file.endswith(".py") and route_file != "__init__.py":
                 try:
-                    module_name = f"app.models.{route_file[:-3]}"
+                    module_name = f"apps.models.{route_file[:-3]}"
                     __import__(module_name)
                 except (ModuleNotFoundError, AttributeError) as e:
                     print(e)
@@ -34,4 +55,4 @@ def import_models():
 
 async def create_project_tables():
     import_models()
-    await db_manager.create_all_tables(DECLARATIVE_BASE)
+    await db_manager.create_all_tables(Base)

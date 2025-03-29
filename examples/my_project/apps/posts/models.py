@@ -1,9 +1,9 @@
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, ForeignKey
-from FastAPIBig.orm.base.base_model import DECLARATIVE_BASE
+from core.database import Base
 
 
-class Post(DECLARATIVE_BASE):
+class Post(Base):
     __tablename__ = "post"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
