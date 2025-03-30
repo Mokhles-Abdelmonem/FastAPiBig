@@ -14,7 +14,7 @@ FastAPIBig is a Python package built on FastAPI designed for structuring and man
 ## Installation
 
 ```bash
-pip install fastapibig
+pip install FastAPIBig
 ```
 
 ## Quick Start
@@ -122,92 +122,267 @@ exists = await user_orm.exists(username="johndoe")
 count = await user_orm.count()
 ```
 
-## API Development
+## API Development with Operations
 
-### Class-based Views
+FastAPIBig provides operation classes that simplify creating CRUD endpoints. These operations can be combined to create comprehensive API views.
 
-FastAPIBig supports class-based views for organizing your API endpoints:
+### Available Operations
+
+- `CreateOperation`: Handles POST requests to create resources
+- `ListOperation`: Handles GET requests to list resources
+- `RetrieveOperation`: Handles GET requests for a single resource
+- `UpdateOperation`: Handles PUT/PATCH requests to update resources
+- `DeleteOperation`: Handles DELETE requests to remove resources
+
+### Basic Usage
 
 ```python
-from FastAPIBig.views.apis.base import APIView
-from fastapi import Depends
+from FastAPIBig.views.apis.operations import CreateOperation, ListOperation, DeleteOperation
+from .models import User
+from .schemas import UserSchemaIn, UserSchemaOut
 
-class UserAPI(APIView):
-    path = "/users"
-    tags = ["Users"]
+class UserView(CreateOperation, ListOperation, DeleteOperation):
+    model = User
+    schema_in = UserSchemaIn
+    schema_out = UserSchemaOut
+    methods = ["create", "list", "delete"]  # Define endpoints to expose
+    include_router = True  # Auto-register with FastAPI
+```
+
+This automatically creates:
+- `POST /users/` - Create a new user
+- `GET /users/` - List all users
+- `DELETE /users/{pk}/` - Delete a user
+
+### Customizing Routes
+
+You can customize the API route behavior:
+
+```python
+class PostView(CreateOperation, RetrieveOperation, DeleteOperation):
+    model = Post
+    schema_in = PostSchemaIn
+    schema_out = PostSchemaOut
+    methods = ["create", "get", "delete"] 
+    prefix = "/blog-posts"  # Custom URL prefix
+    tags = ["blog"]  # Swagger documentation tags
+    include_router = True
+```
+
+### Custom Methods
+
+You can add custom methods to your operations:
+
+```python
+class UserView(CreateOperation, ListOperation, DeleteOperation):
+    model = User
+    schema_in = UserSchemaIn
+    schema_out = UserSchemaOut
+    methods = ["create", "list", "delete"]
+    post_methods = ["create_user"]  # Custom POST method
+    get_methods = ["get_user"]      # Custom GET method
+    include_router = True
+
+    async def create_user(self, create_data: CreateUserSchema):
+        """Custom user creation logic"""
+        instance = await self._model.create(
+            name=create_data.name, email=create_data.email
+        )
+        return self.schema_out.model_validate(instance.__dict__)
+
+    async def get_user(self, pk: int):
+        """Get user with related posts"""
+        user = await self._model.select_related(id=pk, attrs=["posts"])
+        return self.schema_out.model_validate(user.__dict__)
+```
+
+## Custom Routers
+
+While FastAPIBig provides operations for common patterns, you can also create custom routers:
+
+```python
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/custom-posts", tags=["custom-posts"])
+
+@router.get("/")
+async def read_posts():
+    return {"message": "posts app"}
+
+@router.get("/comments/")
+async def read_comments():
+    return {"message": "test comments"}
+```
+
+## Authentication Integration
+
+FastAPIBig works seamlessly with FastAPI's authentication mechanisms:
+
+```python
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from typing import Annotated
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    return token
+
+# Use in your operation class
+class SecurePostView(CreateOperation, RetrieveOperation):
+    model = Post
+    schema_in = PostSchemaIn
+    schema_out = PostSchemaOut
     
-    async def get(self):
-        """Get all users"""
-        users = await self.orm.all()
-        return users
-        
-    async def post(self, user_data: UserCreate):
-        """Create a new user"""
-        # Validation is automatic based on the Pydantic model
-        new_user = await self.orm.create(**user_data.dict())
-        return new_user
+    # Add authentication to all endpoints
+    dependencies = [Depends(get_current_user)]
 ```
 
-### Layered Request Processing
+## Dependency Injection
 
-FastAPIBig structures API logic into distinct phases:
-
-1. **Validation**: Automatic validation using Pydantic models
-2. **Pre-operation**: Execute logic before the main operation
-3. **Operation**: Perform the core functionality
-4. **Post-operation**: Execute logic after the main operation
-
-Example:
+FastAPIBig fully supports FastAPI's dependency injection system:
 
 ```python
-class UserAPI(APIView):
-    path = "/users"
+class CommonQueryParams:
+    def __init__(self, q: str | None = None, skip: int = 0, limit: int = 100):
+        self.q = q
+        self.skip = skip
+        self.limit = limit
+
+class PostListWithParams(ListOperation):
+    model = Post
+    schema_out = PostSchemaOut
     
-    async def pre_post(self, user_data):
-        """Logic to run before creating a user"""
-        # Check if email is already registered
-        if await self.orm.exists(email=user_data.email):
-            raise HTTPException(400, "Email already registered")
-        
-    async def post(self, user_data: UserCreate):
-        """Create a new user"""
-        new_user = await self.orm.create(**user_data.dict())
-        return new_user
-        
-    async def post_post(self, user, user_data):
-        """Logic to run after creating a user"""
-        # Send welcome email
-        await send_welcome_email(user.email)
+    async def list(self, params: CommonQueryParams = Depends()):
+        """Custom list with query parameters"""
+        results = await self._model.filter()
+        # Apply filtering based on params
+        filtered = [r for r in results[params.skip:params.skip+params.limit]]
+        return [self.schema_out.model_validate(r.__dict__) for r in filtered]
 ```
 
-## Advanced Usage
+## Complete Examples
 
-### Custom Database Session Management
+### Posts API with Custom Router and Authentication
 
 ```python
-from FastAPIBig.orm.base.session_manager import DataBaseSessionManager
-from FastAPIBig.orm.base.base_model import ORMSession
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from typing import Annotated
 
-# Initialize the session manager
-db_manager = DataBaseSessionManager("postgresql+asyncpg://user:pass@localhost/dbname")
+from .models import Post
+from .schemas import PostSchemaIn, PostSchemaOut
+from FastAPIBig.views.apis.operations import (
+    ListOperation,
+    CreateOperation,
+    RetrieveOperation,
+    DeleteOperation,
+)
 
-# Initialize the ORM session
-ORMSession.initialize(db_manager)
+# Custom router for additional endpoints
+router = APIRouter(prefix="/custom-posts", tags=["custom-posts"])
+
+@router.get("/")
+async def read_posts():
+    return {"message": "posts app"}
+
+@router.get("/comments/")
+async def read_comments():
+    return {"message": "test comments"}
+
+# Authentication setup
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    return token
+
+# Common parameters for pagination
+class CommonQueryParams:
+    def __init__(self, q: str | None = None, skip: int = 0, limit: int = 100):
+        self.q = q
+        self.skip = skip
+        self.limit = limit
+
+# Post create, retrieve, delete operations
+class PostView(CreateOperation, RetrieveOperation, DeleteOperation):
+    model = Post
+    schema_in = PostSchemaIn
+    schema_out = PostSchemaOut
+    methods = ["create", "get", "delete"]
+    include_router = True
+    
+    # Add authentication to these endpoints
+    dependencies = [Depends(get_current_user)]
+
+# Post listing operation
+class PostList(ListOperation):
+    model = Post
+    schema_in = PostSchemaIn
+    schema_out = PostSchemaOut
+    methods = ["list"]
+    include_router = True
+    
+    async def list(self, params: CommonQueryParams = Depends()):
+        """List posts with pagination"""
+        posts = await self._model.all()
+        return [
+            self.schema_out.model_validate(post.__dict__) 
+            for post in posts[params.skip:params.skip+params.limit]
+        ]
 ```
 
-### Custom CLI Commands
-
-You can extend the CLI with your own commands:
+### Users API with Custom Methods
 
 ```python
-from cli.py import cli
-import click
+from fastapi import APIRouter
+from .models import User
+from .schemas import UserSchemaIn, UserSchemaOut, CreateUserSchema
+from FastAPIBig.views.apis.operations import (
+    CreateOperation,
+    ListOperation,
+    DeleteOperation,
+)
 
-@cli.command()
-@click.argument("name")
-def custom_command(name):
-    """Custom CLI command"""
-    click.echo(f"Hello, {name}!")
+# Custom router for additional endpoints
+router = APIRouter(prefix="/custom-users", tags=["custom-users"])
+
+@router.get("/")
+def read_users():
+    return {"message": "users app"}
+
+# User view with custom methods
+class UserView(CreateOperation, ListOperation, DeleteOperation):
+    model = User
+    schema_in = UserSchemaIn
+    schema_out = UserSchemaOut
+    methods = ["create", "list", "delete"]
+    post_methods = ["create_user"]  # Custom POST method
+    get_methods = ["get_user"]      # Custom GET method
+    prefix = "/new-users"           # Custom URL prefix
+    tags = ["new-users"]            # Custom documentation tag
+    include_router = True
+
+    async def create_user(self, create_data: CreateUserSchema):
+        """Custom user creation with specific fields"""
+        instance = await self._model.create(
+            name=create_data.name, email=create_data.email
+        )
+        return self.schema_out.model_validate(instance.__dict__)
+
+    async def get_user(self, pk: int):
+        """Get user with their related posts in one query"""
+        user = await self._model.select_related(id=pk, attrs=["posts"])
+        return self.schema_out.model_validate(user.__dict__)
 ```
 
 ## Project Structure
