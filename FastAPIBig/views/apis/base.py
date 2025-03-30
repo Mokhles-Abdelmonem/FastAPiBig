@@ -8,8 +8,8 @@ from FastAPIBig.orm.base.base_model import ORM
 
 class BaseAPI:
     """
-    BaseAPI is a foundational class for creating API endpoints in a FastAPI application. 
-    It provides mechanisms for defining schemas, methods, dependencies, and dynamically 
+    BaseAPI is a foundational class for creating API endpoints in a FastAPI application.
+    It provides mechanisms for defining schemas, methods, dependencies, and dynamically
     registering routes.
 
     Attributes:
@@ -128,8 +128,8 @@ class BaseAPI:
         """
         Create an instance of the API class and return its router.
 
-        This method is a class method that initializes an instance of the 
-        `BaseAPI` class (or its subclass) with the provided `prefix` and `tags`, 
+        This method is a class method that initializes an instance of the
+        `BaseAPI` class (or its subclass) with the provided `prefix` and `tags`,
         and then returns the associated `APIRouter` object.
 
         Args:
@@ -166,16 +166,18 @@ class BaseAPI:
         """
         return self.schemas_out.get(method, self.schema_out)
 
-    def _get_schema_out(self, method: str = None) -> Type[BaseModel]|Type[List[BaseModel]]|None:
+    def _get_schema_out(
+        self, method: str = None
+    ) -> Type[BaseModel] | Type[List[BaseModel]] | None:
         """
         Determines the output schema for a given method.
 
         Args:
-            method (str, optional): The method name for which the output schema is required. 
+            method (str, optional): The method name for which the output schema is required.
                 Can be "list", "delete", or any other method name. Defaults to None.
 
         Returns:
-            Type[BaseModel] | Type[List[BaseModel]] | None: 
+            Type[BaseModel] | Type[List[BaseModel]] | None:
                 - If the method is "list" or in `self.list_methods`, returns a list of schema classes.
                 - If the method is "delete" or in `self.delete_methods`, returns None.
                 - Otherwise, returns the schema class corresponding to the method.
@@ -202,15 +204,15 @@ class BaseAPI:
         """
         Registers a method from the current class to the `wrapper` attribute.
 
-        This function checks if the specified method name exists in the `all_methods` 
-        attribute. If it does, it retrieves the method from the current class and 
-        assigns it to the `wrapper` attribute under the same name. Optionally, it can 
+        This function checks if the specified method name exists in the `all_methods`
+        attribute. If it does, it retrieves the method from the current class and
+        assigns it to the `wrapper` attribute under the same name. Optionally, it can
         also set type annotations for the method's "data" parameter.
 
         Args:
             method_name (str): The name of the method to register.
-            set_annotations (bool, optional): If True, sets the "data" annotation 
-                for the method using the schema returned by `_get_schema_in_class`. 
+            set_annotations (bool, optional): If True, sets the "data" annotation
+                for the method using the schema returned by `_get_schema_in_class`.
                 Defaults to False.
 
         Raises:
@@ -388,6 +390,7 @@ class RegisterRetrieve(BaseAPI):
         _load_get_methods():
             Iterates through the list of GET methods and loads them with their respective routes.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initialize the class and perform necessary setup.
@@ -452,6 +455,7 @@ class RegisterUpdate(BaseAPI):
         put_methods (list):
             A list of additional PUT methods to be loaded dynamically.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initialize the class instance and perform necessary setup.
@@ -521,6 +525,7 @@ class RegisterPartialUpdate(BaseAPI):
             A list of method names that are used to dynamically load
             additional patch methods.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initialize the instance and perform any necessary setup.
@@ -535,9 +540,9 @@ class RegisterPartialUpdate(BaseAPI):
         """
         Configures the partial update functionality for the API view.
 
-        This method sets up the "patch" HTTP method for partial updates, 
-        associates it with the "partial_update" handler, and defines the 
-        endpoint path as "/{pk}". It also ensures that type annotations 
+        This method sets up the "patch" HTTP method for partial updates,
+        associates it with the "partial_update" handler, and defines the
+        endpoint path as "/{pk}". It also ensures that type annotations
         are set for the method and loads any additional patch-related methods.
         """
         self._load_method("patch", "partial_update", "/{pk}", set_annotations=True)

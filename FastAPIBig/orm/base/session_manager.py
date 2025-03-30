@@ -5,8 +5,8 @@ from typing import AsyncIterator, Any
 
 class DataBaseSessionManager:
     """
-    DataBaseSessionManager is a utility class for managing asynchronous database sessions 
-    and operations using SQLAlchemy. It provides methods to initialize database engines, 
+    DataBaseSessionManager is a utility class for managing asynchronous database sessions
+    and operations using SQLAlchemy. It provides methods to initialize database engines,
     create tables, and manage database sessions.
 
     Attributes:
@@ -23,6 +23,7 @@ class DataBaseSessionManager:
         async_session():
             Provides an asynchronous context manager for database sessions.
     """
+
     def __init__(self, database_url: str, **kwargs: Any):
         """Initializes the SessionManager with a database URL and optional keyword arguments."""
         self._async_engine = create_async_engine(
@@ -36,8 +37,8 @@ class DataBaseSessionManager:
         """
         Asynchronously closes the database connection and disposes of the engine.
 
-        This method disposes of the asynchronous database engine, effectively 
-        closing all connections. It also sets the engine and sessionmaker 
+        This method disposes of the asynchronous database engine, effectively
+        closing all connections. It also sets the engine and sessionmaker
         attributes to None to release resources.
 
         Raises:
@@ -52,7 +53,7 @@ class DataBaseSessionManager:
         Asynchronously creates all tables defined in the provided SQLAlchemy Base metadata.
 
         Args:
-            base (sqlalchemy.ext.declarative.api.DeclarativeMeta): 
+            base (sqlalchemy.ext.declarative.api.DeclarativeMeta):
                 The SQLAlchemy Base class containing the metadata for table definitions.
 
         Returns:

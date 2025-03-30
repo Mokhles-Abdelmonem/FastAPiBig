@@ -10,7 +10,6 @@ from FastAPIBig.views.apis.base import BaseAPI
 
 
 def is_locally_defined(cls):
-
     """
     Check if a class is defined locally within its module.
 
@@ -30,11 +29,11 @@ def is_locally_defined(cls):
 
     # Check if the class's module matches the current module
     # and the class is defined directly in that module
-    return (module is not None and
-            hasattr(module, cls.__name__) and
-            getattr(module, cls.__name__) is cls)
-
-
+    return (
+        module is not None
+        and hasattr(module, cls.__name__)
+        and getattr(module, cls.__name__) is cls
+    )
 
 
 def get_app():
@@ -42,7 +41,7 @@ def get_app():
     Initializes and configures a FastAPI application instance.
 
     This function dynamically imports and registers middlewares, routes, and API endpoints
-    based on the application's directory structure. It supports both feature-based and 
+    based on the application's directory structure. It supports both feature-based and
     type-based project structures.
 
     Returns:
@@ -55,34 +54,36 @@ def get_app():
               and imports routes from `apps.<feature>.routes`.
             - Type-based structure: Scans the `apps/routes` directory for Python files,
               and imports routes from `apps.routes.<route_file>`.
-        - Automatically includes routers defined in modules or subclasses of `BaseAPI` 
+        - Automatically includes routers defined in modules or subclasses of `BaseAPI`
           with the `include_router` attribute set to `True`.
 
     Notes:
-        - Middlewares are added only if they are subclasses of `BaseHTTPMiddleware` 
+        - Middlewares are added only if they are subclasses of `BaseHTTPMiddleware`
           and are locally defined.
-        - Routes are included only if the module contains a `router` object or 
+        - Routes are included only if the module contains a `router` object or
           subclasses of `BaseAPI` with the `include_router` attribute set to `True`.
-        - Handles exceptions such as `ModuleNotFoundError`, `AttributeError`, and 
+        - Handles exceptions such as `ModuleNotFoundError`, `AttributeError`, and
           `ImportError` gracefully during dynamic imports.
     """
 
     app_module = importlib.import_module("core.app")
     app = getattr(app_module, "FASTAPI_APP", None) or FastAPI()
 
-
     def add_middlewares():
         middlewares_module = importlib.import_module("core.middlewares")
         for name, obj in inspect.getmembers(middlewares_module, inspect.isclass):
-            if (issubclass(obj, BaseHTTPMiddleware) and
-                    obj is not BaseHTTPMiddleware and  # Exclude the base class itself
-                    is_locally_defined(obj)):  # Only include locally defined subclasses
+            if (
+                issubclass(obj, BaseHTTPMiddleware)
+                and obj is not BaseHTTPMiddleware  # Exclude the base class itself
+                and is_locally_defined(obj)
+            ):  # Only include locally defined subclasses
                 if not any(obj is middleware.cls for middleware in app.user_middleware):
                     app.add_middleware(obj)
 
     add_middlewares()
 
     apps_dir = os.path.join(os.getcwd(), "apps")
+
     def import_and_register_routes(module_name: str, prefix: str):
         try:
             module = importlib.import_module(module_name)

@@ -5,16 +5,16 @@ def get_project_settings():
     """
     Loads the project settings module.
 
-    This function attempts to dynamically import the `settings` module from the 
-    user's project under the `core` package. If the module is not found, it falls 
-    back to importing the default `settings` module provided within the 
+    This function attempts to dynamically import the `settings` module from the
+    user's project under the `core` package. If the module is not found, it falls
+    back to importing the default `settings` module provided within the
     `FastAPIBig.conf.project_template.core` package.
 
     Returns:
         module: The imported settings module.
 
     Raises:
-        ModuleNotFoundError: If neither the user's project settings nor the 
+        ModuleNotFoundError: If neither the user's project settings nor the
         default settings module can be found.
     """
     try:

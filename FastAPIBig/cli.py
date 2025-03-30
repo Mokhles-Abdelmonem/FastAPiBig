@@ -55,7 +55,9 @@ def createproject(project_name):
 
 @cli.command()
 @click.argument("app_name")
-@click.option("--tb", is_flag=True, help="Create a type-based structure instead of feature-based.")
+@click.option(
+    "--tb", is_flag=True, help="Create a type-based structure instead of feature-based."
+)
 def startapp(app_name, tb):
     """
     Command to create a new FastAPI app inside the project.
@@ -102,7 +104,7 @@ def startapp(app_name, tb):
 
     if tb:
         for file_name in os.listdir(APP_TEMPLATE_DIR):
-            if file_name.startswith('__'):
+            if file_name.startswith("__"):
                 continue
             dir_name = file_name.split(".")[0]
             dest_dir = os.path.join(base_path, dir_name)
@@ -143,7 +145,13 @@ def runserver(host, port, reload, workers):
         To run the server on a custom host and port with auto-reload enabled:
             $ python cli.py runserver --host 0.0.0.0 --port 8080 --reload
     """
-    uvicorn.run("FastAPIBig.management.fastapi_app:app", host=host, port=port, reload=reload, workers=workers)
+    uvicorn.run(
+        "FastAPIBig.management.fastapi_app:app",
+        host=host,
+        port=port,
+        reload=reload,
+        workers=workers,
+    )
 
 
 @cli.command()

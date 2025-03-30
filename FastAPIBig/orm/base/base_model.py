@@ -26,6 +26,7 @@ class ORMSession:
             Provides an asynchronous context manager for accessing a database session.
             Raises an exception if the session manager is not initialized.
     """
+
     _db_manager: Optional["DataBaseSessionManager"] = None
 
     @classmethod
@@ -120,6 +121,7 @@ class ORM(ORMSession):
     Attributes:
         model: The SQLAlchemy model associated with this ORM instance.
     """
+
     def __init__(self, model: Type["DeclarativeBase"]):
         self.model = model
 
@@ -155,7 +157,7 @@ class ORM(ORMSession):
             pk (int): The primary key of the record to retrieve.
 
         Returns:
-            Optional[Base]: The retrieved record as an instance of the model, 
+            Optional[Base]: The retrieved record as an instance of the model,
             or None if no record with the specified primary key exists.
         """
         async for db_session in self._async_session():
@@ -196,11 +198,11 @@ class ORM(ORMSession):
 
         Args:
             pk (Any): The primary key of the instance to delete.
-            model (Optional[Type[Base]]): The SQLAlchemy model class. If not provided, 
+            model (Optional[Type[Base]]): The SQLAlchemy model class. If not provided,
                 the default model associated with the class will be used.
 
         Returns:
-            bool: True if the instance was successfully deleted, False if the instance 
+            bool: True if the instance was successfully deleted, False if the instance
             was not found.
 
         Raises:
@@ -299,7 +301,7 @@ class ORM(ORMSession):
 
     async def count(self):
         """
-        Asynchronously counts the total number of records in the database table 
+        Asynchronously counts the total number of records in the database table
         associated with the model.
 
         Returns:
@@ -332,8 +334,8 @@ class ORM(ORMSession):
             The result of the executed query.
 
         Note:
-            This method uses an asynchronous session to execute the query and 
-            returns the result. Ensure that the query is compatible with the 
+            This method uses an asynchronous session to execute the query and
+            returns the result. Ensure that the query is compatible with the
             database engine being used.
         """
         async for db_session in self._async_session():
@@ -345,7 +347,7 @@ class ORM(ORMSession):
         Generate a list of filter conditions based on the provided dictionary of field-value pairs.
 
         Args:
-            filtered_fields (dict[str, Any], optional): A dictionary where keys are field names 
+            filtered_fields (dict[str, Any], optional): A dictionary where keys are field names
                 and values are the corresponding values to filter by. Defaults to None.
 
         Returns:
@@ -367,11 +369,11 @@ class ORM(ORMSession):
 
     async def select_related(self, attrs: list[str] = None, **kwargs):
         """
-        Asynchronously retrieves a related model instance from the database with optional 
+        Asynchronously retrieves a related model instance from the database with optional
         attributes to refresh.
 
         Args:
-            attrs (list[str], optional): A list of attribute names to refresh on the 
+            attrs (list[str], optional): A list of attribute names to refresh on the
                 retrieved model instance. Defaults to an empty list.
             **kwargs: Arbitrary keyword arguments used to filter the query.
 
@@ -379,8 +381,8 @@ class ORM(ORMSession):
             AttributeError: If any attribute in `attrs` does not exist on the model.
 
         Returns:
-            Optional[Model]: The first instance of the model that matches the filter 
-                conditions, with the specified attributes refreshed, or `None` if no 
+            Optional[Model]: The first instance of the model that matches the filter
+                conditions, with the specified attributes refreshed, or `None` if no
                 matching instance is found.
         """
         attrs = attrs or []
