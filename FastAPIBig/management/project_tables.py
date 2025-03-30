@@ -1,6 +1,7 @@
 import os
 
 from FastAPIBig.management import db_manager
+from core.database import Base
 
 
 def import_models():

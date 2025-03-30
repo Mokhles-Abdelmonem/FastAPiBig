@@ -10,9 +10,6 @@ from FastAPIBig.views.apis.operations import (
 )
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated
-
-from ..users.models import User
-
 router = APIRouter(prefix="/custom-posts", tags=["custom-posts"])
 
 
