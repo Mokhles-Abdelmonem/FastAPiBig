@@ -37,7 +37,8 @@ def get_declarative_base():
         Base: The declarative base class for SQLAlchemy models.
     """
     try:
-        Base = importlib.import_module("core.database.Base")
+        database = importlib.import_module("core.database")
+        return database.Base
     except ModuleNotFoundError:
         from FastAPIBig.conf.project_template.core.database import Base
     return Base
