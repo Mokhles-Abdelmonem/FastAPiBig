@@ -22,9 +22,6 @@ def import_models():
     Any `ModuleNotFoundError` or `AttributeError` encountered during the import
     process is caught and printed to the console.
 
-    Note:
-        - The function assumes the current working directory is the root of the project.
-        - Files named `__init__.py` are ignored during the import process.
     """
 
     # Dynamically include routes
