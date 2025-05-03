@@ -22,7 +22,7 @@ pip install FastAPIBig
 ### Creating a New Project
 
 ```bash
-python -m fastapi-admin createproject myproject
+fastapi-admin createproject myproject
 cd myproject
 ```
 
@@ -34,10 +34,10 @@ This creates a new project with the following structure:
 
 ```bash
 # Feature-based app structure (default)
-python -m cli.py startapp users
+python cli.py startapp users
 
 # Type-based app structure
-python -m cli.py startapp products --tb
+python cli.py startapp products --tb
 ```
 
 #### Feature-based Structure
@@ -74,16 +74,16 @@ apps/
 
 ```bash
 # Run with default settings
-python -m cli.py runserver
+python cli.py runserver
 
 # Run with custom settings
-python -m cli.py runserver --host 0.0.0.0 --port 8080 --reload --workers 4
+python cli.py runserver --host 0.0.0.0 --port 8080 --reload --workers 4
 ```
 
 ### Creating Database Tables
 
 ```bash
-python -m cli.py createtables
+python cli.py createtables
 ```
 
 ## Database Operations with ORM
